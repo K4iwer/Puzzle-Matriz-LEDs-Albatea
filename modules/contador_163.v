@@ -29,3 +29,4 @@ module contador_163 ( clock, clr, ld, ent, enp, D, Q, rco );
         if (ent && (Q == 4'd15))   rco = 1;
         else                       rco = 0;
 endmodule
+
