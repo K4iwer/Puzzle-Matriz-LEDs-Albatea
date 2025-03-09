@@ -7,18 +7,32 @@
     */
 
 module matriz_leds (
-    input logic clk,  // Clock principal da FPGA
-    input logic rst,  // Botão de reset
-    input logic [5:0] botoes, // Entrada dos botões físicos
-    //input logic [7:0] nivel_requerido, // Máscara da linha necessária para vencer
-    input logic [2:0] linha_verificada, // Linha a ser verificada para a vitória
+    input logic clk,              // Clock principal da FPGA
+    input logic rst,              // Botão de reset
+    input logic [5:0] botoes,     // Entrada dos botões físicos
+    input logic [2:0] nivel,      // Nivel atual do jogador
     output logic nivel_concluido, // Output que avisa a UC se venceu
-    output logic [7:0] colunas, // Sinais para as colunas da matriz de LEDs
-    output logic [7:0] linhas   // Sinais para ativar linhas da matriz
+    output logic [7:0] colunas,   // Sinais para as colunas da matriz de LEDs
+    output logic [7:0] linhas     // Sinais para ativar linhas da matriz
 );
 
     reg [7:0] estado_leds [7:0]; // Matriz virtual para armazenar estado das LEDs
     reg [2:0] linha_atual; // Variável para escanear as linhas
+    reg [7:0] linhas
+
+    // Checa condição de vitória com base no nível atual
+    always_ff @(posedge clk or posedge rst) begin
+        if (rst) begin
+            nivel_concluido <= 0;
+        end else begin
+            case (nivel) 
+                3'b000 : nivel_concluido <= (estado_leds[0] == 8'b11111111);
+                3'b001: nivel_concluido <= (estado_leds[0] == 8'b11111111) && (estado_leds[1] == 8'b11111111) && (estado_leds[2] == 8'b11111111);
+                3'b010: nivel_concluido <= (estado_leds[0] == 8'b11111111) && (estado_leds[1] == 8'b11111111) && (estado_leds[2] == 8'b11111111) && (estado_leds[3] == 8'b11111111) && (estado_leds[4] == 8'b11111111);
+                3'b011: nivel_concluido <= (estado_leds[0] == 8'b11111111) && (estado_leds[1] == 8'b11111111) && (estado_leds[2] == 8'b11111111) && (estado_leds[3] == 8'b11111111) && (estado_leds[4] == 8'b11111111) && (estado_leds[5] == 8'b11111111) && (estado_leds[6] == 8'b11111111);
+                3'b100: nivel_concluido <= (estado_leds[0] == 8'b11111111) && (estado_leds[1] == 8'b11111111) && (estado_leds[2] == 8'b11111111) && (estado_leds[3] == 8'b11111111) && (estado_leds[4] == 8'b11111111) && (estado_leds[5] == 8'b11111111) && (estado_leds[6] == 8'b11111111) && (estado_leds[7] == 8'b11111111);
+                default: nivel_concluido <= 0;
+    end
 
     // Reset: Apaga todas as LEDs no início
     always_ff @(posedge clk or posedge rst) begin
@@ -49,9 +63,6 @@ module matriz_leds (
     assign linhas = ~(1 << linha_atual);
 
     // Colunas recebem valores da linha ativa
-    assign colunas = estado_leds[linha_atual];
-
-    // Verificação de vitória: se a linha_verificada está toda acesa como o esperado
-    assign nivel_concluido = (estado_leds[linha_verificada] == nivel_requerido);
+    assign colunas = estado_leds[linha_atual];  
 
 endmodule
