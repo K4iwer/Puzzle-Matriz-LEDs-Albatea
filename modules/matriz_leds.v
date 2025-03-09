@@ -1,16 +1,24 @@
+/*
+    Este módulo é o controlador de uma matriz de leds. Ele trata as linhas da matriz como terra e as 
+    colunas como fase, logo, para ativar algo na linha 5, ele faz linhas = 01111 e ativa o que quiser
+    nas colunas. 
+
+
+    */
+
 module matriz_leds (
     input logic clk,  // Clock principal da FPGA
     input logic rst,  // Botão de reset
     input logic [5:0] botoes, // Entrada dos botões físicos
-    input logic [7:0] nivel_requerido, // Máscara da linha necessária para vencer
+    //input logic [7:0] nivel_requerido, // Máscara da linha necessária para vencer
     input logic [2:0] linha_verificada, // Linha a ser verificada para a vitória
     output logic nivel_concluido, // Output que avisa a UC se venceu
     output logic [7:0] colunas, // Sinais para as colunas da matriz de LEDs
     output logic [7:0] linhas   // Sinais para ativar linhas da matriz
 );
 
-    logic [7:0] estado_leds [7:0]; // Matriz virtual para armazenar estado das LEDs
-    logic [2:0] linha_atual; // Variável para escanear as linhas
+    reg [7:0] estado_leds [7:0]; // Matriz virtual para armazenar estado das LEDs
+    reg [2:0] linha_atual; // Variável para escanear as linhas
 
     // Reset: Apaga todas as LEDs no início
     always_ff @(posedge clk or posedge rst) begin
