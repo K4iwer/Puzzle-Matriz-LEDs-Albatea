@@ -11,9 +11,9 @@ module matriz_leds (
     input rst,              // Botão de reset
     input [7:0] botoes,     // Entrada dos botões físicos
     input [2:0] nivel,      // Nivel atual do jogador
-    output nivel_concluido,  // Output que avisa a UC se venceu
+    output reg nivel_concluido,  // Output que avisa a UC se venceu
     output [7:0] colunas,   // Sinais para as colunas da matriz de LEDs
-    output [7:0] linhas     // Sinais para ativar linhas da matriz
+    output [2:0] linhas,     // Sinais para ativar linhas da matriz
     output [2:0] db_linha,
     output db_clock,
     output db_reset
@@ -49,11 +49,13 @@ module matriz_leds (
     end
 
     // Reset: Apaga todas as LEDs no início
-    always @* begin
+    always @(posedge clk or posedge rst) begin
         if (rst) begin
-            for (i = 0; i < 8; i = i + 1)
-                for (j = 0; j < 8; j = j + 1)
+            for (i = 0; i < 8; i = i + 1) begin
+                for (j = 0; j < 8; j = j + 1) begin
                     estado_leds[i][j] <= 0; // Desliga todas as LEDs
+                end 
+            end 
         end else begin
             // Controle das LEDs pelos botões
             if (botoes[0]) begin 
@@ -163,6 +165,6 @@ module matriz_leds (
 
     assign db_linha = linha_atual;
     assign db_clock = clk;
-    assign db_reset = rst; 
+    assign db_reset = rst;
 
 endmodule
