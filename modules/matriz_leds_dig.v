@@ -70,7 +70,7 @@ module matriz_leds (
                 estado_leds[2][2] <= ~estado_leds[2][2];
             end 
 
-            if (botoes[1]) begin
+            else if (botoes[1]) begin //else
                 estado_leds[3][0] <= ~estado_leds[3][0];
                 estado_leds[3][1] <= ~estado_leds[3][1];
                 estado_leds[3][2] <= ~estado_leds[3][2];
@@ -81,7 +81,7 @@ module matriz_leds (
                 estado_leds[6][0] <= ~estado_leds[6][0];
                 estado_leds[6][1] <= ~estado_leds[6][1];
             end
-            if (botoes[2]) begin
+            else if (botoes[2]) begin
                 estado_leds[4][2] <= ~estado_leds[4][2];
                 estado_leds[5][2] <= ~estado_leds[5][2];
                 estado_leds[5][3] <= ~estado_leds[5][3];
@@ -93,7 +93,7 @@ module matriz_leds (
                 estado_leds[7][3] <= ~estado_leds[7][3];
             end
         
-            if (botoes[3]) begin
+            else if (botoes[3]) begin
                 estado_leds[5][3] <= ~estado_leds[5][3];
                 estado_leds[5][4] <= ~estado_leds[5][4];
                 estado_leds[5][5] <= ~estado_leds[5][5];
@@ -104,7 +104,7 @@ module matriz_leds (
                 estado_leds[7][4] <= ~estado_leds[7][4];
                 estado_leds[7][5] <= ~estado_leds[7][5];
             end
-            if (botoes[4]) begin
+            else if (botoes[4]) begin
                 estado_leds[0][3] <= ~estado_leds[0][3];
                 estado_leds[0][4] <= ~estado_leds[0][4];
                 estado_leds[1][3] <= ~estado_leds[1][3];
@@ -115,7 +115,7 @@ module matriz_leds (
                 estado_leds[3][4] <= ~estado_leds[3][4];
                 estado_leds[4][3] <= ~estado_leds[4][3];
             end
-            if (botoes[5]) begin
+            else if (botoes[5]) begin
                 estado_leds[0][5] <= ~estado_leds[0][5];
                 estado_leds[1][5] <= ~estado_leds[1][5];
                 estado_leds[2][5] <= ~estado_leds[2][5];
@@ -126,7 +126,7 @@ module matriz_leds (
                 estado_leds[4][5] <= ~estado_leds[4][5];
                 estado_leds[4][6] <= ~estado_leds[4][6];
             end
-            if (botoes[6]) begin
+            else if (botoes[6]) begin
                 estado_leds[5][5] <= ~estado_leds[5][5];
                 estado_leds[5][6] <= ~estado_leds[5][6];
                 estado_leds[5][7] <= ~estado_leds[5][7];
@@ -137,7 +137,7 @@ module matriz_leds (
                 estado_leds[7][6] <= ~estado_leds[7][6];
                 estado_leds[7][7] <= ~estado_leds[7][7];
             end
-            if (botoes[7]) begin
+            else if (botoes[7]) begin
                 estado_leds[0][6] <= ~estado_leds[0][6];
                 estado_leds[0][7] <= ~estado_leds[0][7];
                 estado_leds[1][6] <= ~estado_leds[1][6];
