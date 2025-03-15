@@ -7,12 +7,12 @@
       <elementName>External</elementName>
       <elementAttributes>
         <entry>
-          <string>Label</string>
-          <string>jogo_desafio_memoria</string>
-        </entry>
-        <entry>
           <string>applicationType</string>
           <appType>IVERILOG</appType>
+        </entry>
+        <entry>
+          <string>Label</string>
+          <string>jogo_desafio_memoria</string>
         </entry>
         <entry>
           <string>externalInputs</string>
@@ -523,6 +523,30 @@ endmodule
 
     */
 
+/*
+    Este módulo é o controlador de uma matriz de leds. Ele trata as linhas da matriz como terra e as 
+    colunas como fase, logo, para ativar algo na linha 5, ele faz linhas = 01111 e ativa o que quiser
+    nas colunas. 
+
+
+    */
+
+/*
+    Este módulo é o controlador de uma matriz de leds. Ele trata as linhas da matriz como terra e as 
+    colunas como fase, logo, para ativar algo na linha 5, ele faz linhas = 01111 e ativa o que quiser
+    nas colunas. 
+
+
+    */
+
+/*
+    Este módulo é o controlador de uma matriz de leds. Ele trata as linhas da matriz como terra e as 
+    colunas como fase, logo, para ativar algo na linha 5, ele faz linhas = 01111 e ativa o que quiser
+    nas colunas. 
+
+
+    */
+
 module matriz_leds_dig (
     input clk,                  // Clock principal da FPGA
     input rst,                  // Botão de reset
@@ -538,6 +562,8 @@ module matriz_leds_dig (
 
     reg [7:0] estado_leds [7:0]; // Matriz virtual para armazenar estado das LEDs
     reg [2:0] linha_atual;       // Variável para escanear as linhas
+    reg teve_reset;
+    reg reset;
     integer i, j;
 
     initial begin
@@ -546,12 +572,13 @@ module matriz_leds_dig (
                     estado_leds[i][j] &lt;= 0; // Desliga todas as LEDs
             end 
         end 
+        teve_reset = 0;
         linha_atual = 0;
     end
 
     // Checa condição de vitória com base no nível atual
-    always @(posedge clk or posedge rst) begin
-        if (rst) begin
+    always @(posedge clk or posedge reset) begin
+        if (reset) begin
             nivel_concluido &lt;= 0;
         end else begin
             case (nivel) 
@@ -565,12 +592,20 @@ module matriz_leds_dig (
         end
     end
 
+    
+    // Edge detector do reset
+    always @* begin
+        reset &lt;= (rst &amp; ~teve_reset);
+        teve_reset &lt;= reset;
+    end
+    
+
     // Reset: Apaga todas as LEDs no início
-    always @(posedge clk or posedge rst) begin
+    always @(posedge clk or posedge reset) begin
         i = 0;
         j = 0; 
 
-        if (rst) begin
+        if (reset) begin
             for (i = 0; i &lt; 8; i = i + 1) begin
                 for (j = 0; j &lt; 8; j = j + 1) begin
                     estado_leds[i][j] &lt;= 0;       // Desliga todas as LEDs
