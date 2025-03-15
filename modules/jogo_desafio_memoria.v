@@ -22,9 +22,9 @@ module jogo_desafio_memoria (
     wire s_contaN;
     wire s_zeraN;
     wire s_zeraM;
-    wire s_estado;
+    wire [4:0] s_estado;
     wire [2:0] s_nivel;
-    wire [7:0] s_botoes
+    wire [7:0] s_botoes;
 
     // Unidade de controle
     unidade_controle unidade_controle (
@@ -66,7 +66,7 @@ module jogo_desafio_memoria (
     // Display dos botões
     hexa7seg_ent8bit HEX1 (
         .hexa    ( s_botoes ), 
-        .display ( db_contagem )
+        .display ( db_botoes )
     );
 
 endmodule

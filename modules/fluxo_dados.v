@@ -19,8 +19,8 @@ module fluxo_dados (
   output [7:0] linhas,
   output nivelIgualUltimoNivel,
   output nivelMenorOuIgualUltimoNivel,
-  output db_nivel,
-  output db_botoes
+  output [2:0] db_nivel,
+  output [7:0] db_botoes
 );
 
   // sinais internos para interligacao dos componentes
