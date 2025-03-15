@@ -1,0 +1,16 @@
+sync_rom_16x4.v
+registrador_4.v
+matriz_leds.v
+matriz_leds_dig.v
+contador_m.v
+hexa7seg.v
+hexa7seg_mod.v
+unidade_controle.v
+fluxo_dados.v
+edge_detector.v
+edge_detector_global.v
+mux2x1.v
+contador_163.v
+comparador_85.v
+
+

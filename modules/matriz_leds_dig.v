@@ -6,21 +6,21 @@
 
     */
 
-module matriz_leds (
-    input clk,              // Clock principal da FPGA
-    input rst,              // Botão de reset
-    input [7:0] botoes,     // Entrada dos botões físicos
-    input [2:0] nivel,      // Nivel atual do jogador
-    output reg nivel_concluido,  // Output que avisa a UC se venceu
-    output [7:0] colunas,   // Sinais para as colunas da matriz de LEDs
-    output [2:0] linhas,     // Sinais para ativar linhas da matriz
+module matriz_leds_dig (
+    input clk,                  // Clock principal da FPGA
+    input rst,                  // Botão de reset
+    input [7:0] botoes,         // Entrada dos botões físicos
+    input [2:0] nivel,          // Nivel atual do jogador
+    output reg nivel_concluido, // Output que avisa a UC se venceu
+    output [7:0] colunas,       // Sinais para as colunas da matriz de LEDs
+    output [2:0] linhas,        // Sinais para ativar linhas da matriz
     output [2:0] db_linha,
     output db_clock,
     output db_reset
 );
 
     reg [7:0] estado_leds [7:0]; // Matriz virtual para armazenar estado das LEDs
-    reg [2:0] linha_atual; // Variável para escanear as linhas
+    reg [2:0] linha_atual;       // Variável para escanear as linhas
     integer i, j;
 
     initial begin
@@ -53,7 +53,7 @@ module matriz_leds (
         if (rst) begin
             for (i = 0; i < 8; i = i + 1) begin
                 for (j = 0; j < 8; j = j + 1) begin
-                    estado_leds[i][j] <= 0; // Desliga todas as LEDs
+                    estado_leds[i][j] <= 0;       // Desliga todas as LEDs
                 end 
             end 
         end else begin

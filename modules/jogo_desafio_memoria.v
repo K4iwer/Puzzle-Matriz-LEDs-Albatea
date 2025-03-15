@@ -1,150 +1,72 @@
-
-
+// -------------------------------------------
+// Modulo principal que conecta a UC com o FD
+// -------------------------------------------
 
 module jogo_desafio_memoria (
-    input clock,
-    input reset,
-    input jogar,
-    input [3:0] botoes,
-	 input nivel,
-    output [3:0] leds,
+    input  clock,
+    input  reset,
+    input  jogar,
+    input  [7:0] botoes,
+    output [7:0] colunas,
+    output [7:0] linhas,
     output ganhou,
-    output perdeu,
-    output pronto,
-    output timeout,
-    output db_tem_jogada,
-    output [6:0] db_jogadafeita, 
-    output [6:0] db_contagem, 
-    output [6:0] db_memoria,  
-    output [6:0] db_estado,   
-    output [6:0] db_sequencia
+    output [6:0] db_estado,
+    output [6:0] db_nivel,
+    output [6:0] db_botoes
 );
 
     // Sinais internos para interligacao dos componentes
-
-    wire       s_chavesIgualMemoria;
-    wire       s_enderecoMenorOuIgualLimite;
-    wire       s_enderecoIgualLimite;
-    wire       s_fimE;
-    wire       s_fimL;
-    wire       s_jogada_feita;
-    wire       s_registraR;
-    wire       s_limpaR;
-    wire       s_contaL;
-    wire       s_zeraL;
-    wire       s_contaE;
-    wire       s_zeraE;
-    wire       s_contaTMR;
-    wire       s_zeraTMR;
-    wire       s_limpaM;
-    wire       s_registraM;
-    wire       s_timeout;
-    wire       s_reset_timer;
-    wire [4:0] s_estado;
-    wire [3:0] s_contagem;
-    wire [3:0] s_memoria;
-    wire [3:0] s_jogada;
-    wire [3:0] s_limite;
-    wire [12:0] s_segundos;
-    wire [1:0] s_BotoesOuMemoria;
-	 wire s_fimTMR;
-    wire [3:0] s_leds;
+    wire s_nivel_concluido;
+    wire s_nivelIgualUltimoNivel;
+    wire s_nivelMenorOuIgualUltimoNivel;
+    wire s_contaN;
+    wire s_zeraN;
+    wire s_zeraM;
+    wire s_estado;
+    wire [2:0] s_nivel;
+    wire [7:0] s_botoes
 
     // Unidade de controle
     unidade_controle unidade_controle (
-        .clock                      ( clock ),
-        .reset                      ( reset ),
-        .iniciar                    ( jogar ),
-        .chavesIgualMemoria         ( s_chavesIgualMemoria ),
-        .enderecoMenorOuIgualLimite ( s_enderecoMenorOuIgualLimite ),
-        .enderecoIgualLimite        ( s_enderecoIgualLimite ),
-        .fimE                       ( s_fimE ),
-        .fimL                       ( s_fimL ),
-        .fimTMR                     ( s_fimTMR ),
-        .jogada_feita               ( s_jogada_feita ),
-        .timeout_in                 ( s_timeout ),
-        .registraR                  ( s_registraR ),
-        .limpaR                     ( s_limpaR ),
-        .registraM                  ( s_registraM ),
-        .limpaM                     ( s_limpaM),
-        .contaL                     ( s_contaL ), 
-        .zeraL                      ( s_zeraL ),
-        .contaE                     ( s_contaE ),
-        .zeraE                      ( s_zeraE ),
-        .contaTMR                   ( s_contaTMR ),
-        .zeraTMR                    ( s_zeraTMR ),
-        .acertou                    ( ganhou ),
-        .errou                      ( perdeu ),
-        .timeout                    ( timeout ),
-        .pronto                     ( pronto ),
-        .db_estado                  ( s_estado ),
-        .reset_timer                ( s_reset_timer ),
-        .BotoesOuMemoria            ( s_BotoesOuMemoria )
+        .clock                        ( clock ),    
+        .reset                        ( reset ),
+        .iniciar                      ( jogar ),
+        .nivel_concluido              ( s_nivel_concluido ),
+        .nivelIgualUltimoNivel        ( s_nivelIgualUltimoNivel ),
+        .nivelMenorOuIgualUltimoNivel ( s_nivelMenorOuIgualUltimoNivel ),
+        .ganhou                       ( ganhou ),
+        .contaN                       ( s_contaN ),
+        .zeraN                        ( s_zeraN ),
+        .zeraM                        ( s_zeraM ),
+        .db_estado                    ( s_estado )
     );
 
     // Fluxo de dados
     fluxo_dados fluxo_dados (
-        .clock                      ( clock ),
-        .registraR                  ( s_registraR ),
-        .limpaR                     ( s_limpaR ),
-        .registraM                  ( s_registraM ),
-        .limpaM                     ( s_limpaM ),
-        .contaL                     ( s_contaL ),
-        .zeraL                      ( s_zeraL ),
-        .contaE                     ( s_contaE ),
-        .zeraE                      ( s_zeraE ),
-        .contaTMR                   ( s_contaTMR ),
-        .zeraTMR                    ( s_zeraTMR ),
-        .botoes                     ( botoes ),
-        .chavesIgualMemoria         ( s_chavesIgualMemoria ),
-        .enderecoMenorOuIgualLimite ( s_enderecoMenorOuIgualLimite ),
-        .enderecoIgualLimite        ( s_enderecoIgualLimite ),
-        .fimE                       ( s_fimE ),
-        .fimL                       ( s_fimL ),
-        .fimTMR                     ( s_fimTMR ),
-		  .nivel                      (nivel),
-        .jogada_feita               ( s_jogada_feita ),
-        .db_tem_jogada              ( db_tem_jogada ),
-        .db_contagem                ( s_contagem ),
-        .db_memoria                 ( s_memoria ),
-        .db_jogada                  ( s_jogada ),
-        .db_limite                  ( s_limite ),
-        .db_segundos                ( s_segundos ),
-        .timeout                    ( s_timeout ),
-        .reset_timer                ( s_reset_timer ),
-        .BotoesOuMemoria            ( s_BotoesOuMemoria ),
-        .leds                       ( s_leds )
+        .clock                        ( clock ),        
+        .contaN                       ( s_contaN ),  
+        .zeraN                        ( s_zeraN ),   
+        .zeraM                        ( s_zeraM ),   
+        .botoes                       ( botoes ),
+        .nivel_concluido              ( s_nivel_concluido ),
+        .colunas                      ( colunas ),
+        .linhas                       ( linhas ),
+        .nivelIgualUltimoNivel        ( s_nivelIgualUltimoNivel ),
+        .nivelMenorOuIgualUltimoNivel ( s_nivelMenorOuIgualUltimoNivel ),
+        .db_nivel                     ( s_nivel ),
+        .db_botoes                    ( s_botoes )
     );
 
-    // Display das jogadas
-    hexa7seg HEX2 (
-        .hexa    ( s_jogada ), 
-        .display ( db_jogadafeita )
+    // Display dos niveis
+    hexa7seg_ent3bit HEX0 (
+        .hexa    ( s_nivel ), 
+        .display ( db_nivel )
     );
 
-    // Display da contagem
-    hexa7seg HEX0 (
-        .hexa    ( s_contagem ), 
+    // Display dos botões
+    hexa7seg_ent8bit HEX1 (
+        .hexa    ( s_botoes ), 
         .display ( db_contagem )
     );
-
-    // Display da memória
-    hexa7seg HEX1 (
-        .hexa    ( s_memoria ), 
-        .display ( db_memoria )
-    );
-
-    // Display do limite
-    hexa7seg HEX3 (
-        .hexa    ( s_limite ), 
-        .display ( db_sequencia )
-    );
-
-    // Display de estados
-    hexa7seg_mod HEX5 (
-        .hexa    ( s_estado ), 
-        .display ( db_estado )
-    );
-    assign leds = s_leds;
 
 endmodule
