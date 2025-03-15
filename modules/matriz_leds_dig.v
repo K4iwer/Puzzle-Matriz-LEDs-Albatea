@@ -21,6 +21,8 @@ module matriz_leds_dig (
 
     reg [7:0] estado_leds [7:0]; // Matriz virtual para armazenar estado das LEDs
     reg [2:0] linha_atual;       // Variável para escanear as linhas
+    reg teve_reset;
+    reg reset;
     integer i, j;
 
     initial begin
@@ -29,12 +31,13 @@ module matriz_leds_dig (
                     estado_leds[i][j] <= 0; // Desliga todas as LEDs
             end 
         end 
+        teve_reset = 0;
         linha_atual = 0;
     end
 
     // Checa condição de vitória com base no nível atual
-    always @(posedge clk or posedge rst) begin
-        if (rst) begin
+    always @(posedge clk or posedge reset) begin
+        if (reset) begin
             nivel_concluido <= 0;
         end else begin
             case (nivel) 
@@ -48,12 +51,20 @@ module matriz_leds_dig (
         end
     end
 
+    
+    // Edge detector do reset
+    always @* begin
+        reset <= (rst & ~teve_reset);
+        teve_reset <= reset;
+    end
+    
+
     // Reset: Apaga todas as LEDs no início
-    always @(posedge clk or posedge rst) begin
+    always @(posedge clk or posedge reset) begin
         i = 0;
         j = 0; 
 
-        if (rst) begin
+        if (reset) begin
             for (i = 0; i < 8; i = i + 1) begin
                 for (j = 0; j < 8; j = j + 1) begin
                     estado_leds[i][j] <= 0;       // Desliga todas as LEDs
