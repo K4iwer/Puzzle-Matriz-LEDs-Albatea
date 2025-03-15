@@ -47,13 +47,13 @@ module matriz_leds (
 
     // Reset: Apaga todas as LEDs no início
     always @(posedge clk or posedge rst) begin
-        i = 0; 
+        i = 0;
         j = 0; 
 
         if (rst) begin
             for (i = 0; i < 8; i = i + 1) begin
                 for (j = 0; j < 8; j = j + 1) begin
-                    estado_leds[i][j] <= 0; // Desliga todas as LEDs
+                    estado_leds[i][j] <= 0;       // Desliga todas as LEDs
                 end 
             end 
         end else begin
@@ -86,15 +86,12 @@ module matriz_leds (
                 estado_leds[5][2] <= ~estado_leds[5][2];
                 estado_leds[5][3] <= ~estado_leds[5][3];
                 estado_leds[6][2] <= ~estado_leds[6][2];
-                estado_leds[6][3] <= ~estado_leds[6][3];
                 estado_leds[7][0] <= ~estado_leds[7][0];
                 estado_leds[7][1] <= ~estado_leds[7][1];
                 estado_leds[7][2] <= ~estado_leds[7][2];
-                estado_leds[7][3] <= ~estado_leds[7][3];
             end
         
             if (botoes[3]) begin
-                estado_leds[5][3] <= ~estado_leds[5][3];
                 estado_leds[5][4] <= ~estado_leds[5][4];
                 estado_leds[5][5] <= ~estado_leds[5][5];
                 estado_leds[6][3] <= ~estado_leds[6][3];
@@ -121,19 +118,15 @@ module matriz_leds (
                 estado_leds[2][5] <= ~estado_leds[2][5];
                 estado_leds[2][6] <= ~estado_leds[2][6];
                 estado_leds[3][5] <= ~estado_leds[3][5];
-                estado_leds[3][6] <= ~estado_leds[3][6];
                 estado_leds[4][4] <= ~estado_leds[4][4];
                 estado_leds[4][5] <= ~estado_leds[4][5];
                 estado_leds[4][6] <= ~estado_leds[4][6];
             end
             if (botoes[6]) begin
-                estado_leds[5][5] <= ~estado_leds[5][5];
                 estado_leds[5][6] <= ~estado_leds[5][6];
                 estado_leds[5][7] <= ~estado_leds[5][7];
-                estado_leds[6][5] <= ~estado_leds[6][5];
                 estado_leds[6][6] <= ~estado_leds[6][6];
                 estado_leds[6][7] <= ~estado_leds[6][7];
-                estado_leds[7][5] <= ~estado_leds[7][5];
                 estado_leds[7][6] <= ~estado_leds[7][6];
                 estado_leds[7][7] <= ~estado_leds[7][7];
             end
@@ -142,7 +135,6 @@ module matriz_leds (
                 estado_leds[0][7] <= ~estado_leds[0][7];
                 estado_leds[1][6] <= ~estado_leds[1][6];
                 estado_leds[1][7] <= ~estado_leds[1][7];
-                estado_leds[2][6] <= ~estado_leds[2][6];
                 estado_leds[2][7] <= ~estado_leds[2][7];
                 estado_leds[3][6] <= ~estado_leds[3][6];
                 estado_leds[3][7] <= ~estado_leds[3][7];
@@ -153,7 +145,41 @@ module matriz_leds (
 
     // Ciclo para alternar entre as linhas da matriz
     always @(posedge clk) begin
-        linha_atual <= linha_atual + 8'b00000001; // Soma 1 a cada pulso de clock 
+        case (nivel) 
+            3'b000: begin
+                if (linha_atual < 8'b00000001)
+                    linha_atual <= linha_atual + 1;
+                else
+                    linha_atual <= 8'b00000000;
+            end
+            3'b001: begin
+                if (linha_atual < 8'b00000100)
+                    linha_atual <= linha_atual + 1;
+                else
+                    linha_atual <= 8'b00000000;
+            end
+            3'b010: begin
+                if (linha_atual < 8'b00010000)
+                    linha_atual <= linha_atual + 1;
+                else
+                    linha_atual <= 8'b00000000;
+            end
+            3'b011: begin
+                if (linha_atual < 8'b01000000)
+                    linha_atual <= linha_atual + 1;
+                else
+                    linha_atual <= 8'b00000000;
+            end
+            3'b100: begin
+                if (linha_atual < 8'b10000000)
+                    linha_atual <= linha_atual + 1;
+                else
+                    linha_atual <= 8'b00000000;
+            end
+            default: begin
+                nivel_concluido <= 1'b0; // Apenas se precisar sinalizar
+            end
+        endcase
     end
 
     // Ativação da linha atual (apenas uma linha por vez)

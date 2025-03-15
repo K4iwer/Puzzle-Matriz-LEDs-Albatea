@@ -53,7 +53,7 @@ module fluxo_dados (
   // comparador_85 nivel
   comparador_85 comparador_nivel (
     .A    ( s_nivel ),
-    .B    ( 3'b101 ),
+    .B    ( 3'b100 ),
     .ALBi ( 1'b0 ),
     .AGBi ( 1'b0 ),
     .AEBi ( 1'b1 ),
