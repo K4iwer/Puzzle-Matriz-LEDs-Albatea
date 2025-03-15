@@ -69,4 +69,10 @@ module jogo_desafio_memoria (
         .display ( db_botoes )
     );
 
+    // Display dos estados
+    hexa7seg_mod HEX2 (
+        .hexa    ( s_estado ),
+        .display ( db_estado )
+    );
+
 endmodule
