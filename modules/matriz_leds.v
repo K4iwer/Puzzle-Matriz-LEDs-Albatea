@@ -17,7 +17,7 @@ module matriz_leds (
 );
 
     reg [7:0] estado_leds [7:0]; // Matriz virtual para armazenar estado das LEDs
-    reg [2:0] linha_atual; // Variável para escanear as linhas
+    reg [7:0] linha_atual; // Variável para escanear as linhas
     integer i, j;
 
     initial begin
@@ -47,6 +47,9 @@ module matriz_leds (
 
     // Reset: Apaga todas as LEDs no início
     always @(posedge clk or posedge rst) begin
+        i = 0; 
+        j = 0; 
+
         if (rst) begin
             for (i = 0; i < 8; i = i + 1) begin
                 for (j = 0; j < 8; j = j + 1) begin
@@ -150,7 +153,7 @@ module matriz_leds (
 
     // Ciclo para alternar entre as linhas da matriz
     always @(posedge clk) begin
-        linha_atual <= linha_atual + 1; // Soma 1 a cada pulso de clock 
+        linha_atual <= linha_atual + 8'b00000001; // Soma 1 a cada pulso de clock 
     end
 
     // Ativação da linha atual (apenas uma linha por vez)

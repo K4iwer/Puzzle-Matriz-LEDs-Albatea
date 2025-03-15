@@ -59,8 +59,8 @@ module unidade_controle (
             begin 
                 if (nivelIgualUltimoNivel)
                     Eprox =  est_ganhou;
-                else if (!nivelIgualUltimoNivel && nivelMenorOuIgualUltimoNivel)
-                    Eprox = proximo_nivel; 
+                else 
+                    Eprox = proximo_nivel;
             end
             proximo_nivel:      Eprox = inic_nivel;
             est_ganhou:         Eprox = iniciar ? preparacao : est_ganhou;
@@ -79,12 +79,12 @@ module unidade_controle (
         // Define sinais de controle
         case (Eatual)
             inicial: begin
-                zeraM = 1'b1;
+                zeraN = 1'b1;
                 zeraM = 1'b1;
             end
 
             preparacao: begin
-                zeraM = 1'b1;
+                zeraN = 1'b1;
                 zeraM = 1'b1;
             end
 
