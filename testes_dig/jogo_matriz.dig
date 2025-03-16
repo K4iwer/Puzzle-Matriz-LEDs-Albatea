@@ -1,0 +1,1215 @@
+<?xml version="1.0" encoding="utf-8"?>
+<circuit>
+  <version>2</version>
+  <attributes/>
+  <visualElements>
+    <visualElement>
+      <elementName>External</elementName>
+      <elementAttributes>
+        <entry>
+          <string>Label</string>
+          <string>jogo_desafio_memoria</string>
+        </entry>
+        <entry>
+          <string>applicationType</string>
+          <appType>IVERILOG</appType>
+        </entry>
+        <entry>
+          <string>externalInputs</string>
+          <string>clock,reset,jogar,botoes:8</string>
+        </entry>
+        <entry>
+          <string>Width</string>
+          <int>18</int>
+        </entry>
+        <entry>
+          <string>Code</string>
+          <string>// -------------------------------------------
+// Modulo principal que conecta a UC com o FD
+// -------------------------------------------
+
+module jogo_desafio_memoria (
+    input  clock,
+    input  reset,
+    input  jogar,
+    input  [7:0] botoes,
+    output [7:0] colunas,
+    output [2:0] linhas,
+    output ganhou,
+    output [6:0] db_estado,
+    output [6:0] db_nivel,
+    output [6:0] db_botoes
+);
+
+    // Sinais internos para interligacao dos componentes
+    wire s_nivel_concluido;
+    wire s_nivelIgualUltimoNivel;
+    wire s_nivelMenorOuIgualUltimoNivel;
+    wire s_contaN;
+    wire s_zeraN;
+    wire s_zeraM;
+    wire [4:0] s_estado;
+    wire [2:0] s_nivel;
+    wire [7:0] s_botoes;
+
+    // Unidade de controle
+    unidade_controle unidade_controle (
+        .clock                        ( clock ),    
+        .reset                        ( reset ),
+        .iniciar                      ( jogar ),
+        .nivel_concluido              ( s_nivel_concluido ),
+        .nivelIgualUltimoNivel        ( s_nivelIgualUltimoNivel ),
+        .nivelMenorOuIgualUltimoNivel ( s_nivelMenorOuIgualUltimoNivel ),
+        .ganhou                       ( ganhou ),
+        .contaN                       ( s_contaN ),
+        .zeraN                        ( s_zeraN ),
+        .zeraM                        ( s_zeraM ),
+        .db_estado                    ( s_estado )
+    );
+
+    // Fluxo de dados
+    fluxo_dados fluxo_dados (
+        .clock                        ( clock ),        
+        .contaN                       ( s_contaN ),  
+        .zeraN                        ( s_zeraN ),   
+        .zeraM                        ( s_zeraM ),   
+        .botoes                       ( botoes ),
+        .nivel_concluido              ( s_nivel_concluido ),
+        .colunas                      ( colunas ),
+        .linhas                       ( linhas ),
+        .nivelIgualUltimoNivel        ( s_nivelIgualUltimoNivel ),
+        .nivelMenorOuIgualUltimoNivel ( s_nivelMenorOuIgualUltimoNivel ),
+        .db_nivel                     ( s_nivel ),
+        .db_botoes                    ( s_botoes )
+    );
+
+    // Display dos niveis
+    hexa7seg_ent3bit HEX0 (
+        .hexa    ( s_nivel ), 
+        .display ( db_nivel )
+    );
+
+    // Display dos botões
+    hexa7seg_ent8bit HEX1 (
+        .hexa    ( s_botoes ), 
+        .display ( db_botoes )
+    );
+
+    // Display dos estados
+    hexa7seg_mod HEX2 (
+        .hexa    ( s_estado ),
+        .display ( db_estado )
+    );
+
+endmodule
+
+/*
+ * ------------------------------------------------------------------
+ *  Arquivo   : fluxo_dados.v
+ *  Projeto   : Projeto de jogo com matriz de leds
+ * ------------------------------------------------------------------
+ *  Descricao : Fluxo de dados do projeto
+ * ------------------------------------------------------------------
+ */
+
+
+module fluxo_dados (
+  input  clock,
+  input  contaN,  
+  input  zeraN,   
+  input  zeraM,   
+  input  [7:0] botoes,
+  output nivel_concluido,
+  output [7:0] colunas,
+  output [2:0] linhas,
+  output nivelIgualUltimoNivel,
+  output nivelMenorOuIgualUltimoNivel,
+  output [2:0] db_nivel,
+  output [7:0] db_botoes
+);
+
+  // sinais internos para interligacao dos componentes
+  wire [2:0] s_nivel;
+  wire [7:0] s_botoes;
+
+  // contador_163 nivel
+  contador_163 contador_nivel (
+    .clock ( clock ),
+    .clr   ( ~zeraN ),
+    .ld    ( 1&apos;b1 ),
+    .ent   ( 1&apos;b1 ),
+    .enp   ( contaN ),
+    .D     ( 3&apos;b000 ),
+    .Q     ( s_nivel ),
+    .rco   (  )          // n precisa por enquanto
+  );
+
+  // Matriz de leds
+  matriz_leds_dig matriz (
+    .clk             ( clock ),              
+    .rst             ( zeraM ),              
+    .botoes          ( s_botoes ),     
+    .nivel           ( s_nivel ),      
+    .nivel_concluido ( nivel_concluido ), 
+    .colunas         ( colunas ),   
+    .linhas          ( linhas )     
+  );
+
+  // comparador_85 nivel
+  comparador_85 comparador_nivel (
+    .A    ( s_nivel ),
+    .B    ( 3&apos;b100 ),
+    .ALBi ( 1&apos;b0 ),
+    .AGBi ( 1&apos;b0 ),
+    .AEBi ( 1&apos;b1 ),
+    .ALBo (  ),                        // Não utilizado
+    .AGBo ( nivelMenorOuIgualUltimoNivel ),                    
+    .AEBo ( nivelIgualUltimoNivel )
+  );
+
+  // edge detector global
+  edge_detector_global edging (
+    .clock         ( clock ),
+    .reset         ( zeraM ),
+    .botoes        ( botoes ),
+    .edge_detected ( s_botoes )
+  );
+
+  // saida de depuracao
+  assign db_botoes = s_botoes;
+  assign db_nivel  = s_nivel;
+
+endmodule
+
+//------------------------------------------------------------------
+// Arquivo   : exp3_unidade_controle_desafio.v
+// Projeto   : Experiencia 3 - Projeto de uma Unidade de Controle
+//------------------------------------------------------------------
+// Descricao : Unidade de controle
+//
+// usar este codigo como template (modelo) para codificar 
+// máquinas de estado de unidades de controle            
+//------------------------------------------------------------------
+// Revisoes  :
+//     Data        Versao  Autor             Descricao
+//     14/01/2024  1.0     Edson Midorikawa  versao inicial
+//     12/01/2025  1.1     Edson Midorikawa  revisao
+//------------------------------------------------------------------
+//
+//------------------------------------------------------------------
+// Arquivo   : exp3_unidade_controle_desafio.v
+// Projeto   : Experiencia 3 - Projeto de uma Unidade de Controle
+//------------------------------------------------------------------
+// Descricao : Unidade de controle
+//
+// usar este codigo como template (modelo) para codificar 
+// máquinas de estado de unidades de controle            
+//------------------------------------------------------------------
+// Revisoes  :
+//     Data        Versao  Autor             Descricao
+//     14/01/2024  1.0     Edson Midorikawa  versao inicial
+//     12/01/2025  1.1     Edson Midorikawa  revisao
+//------------------------------------------------------------------
+//
+module unidade_controle (
+    input clock,
+    input reset,
+    input iniciar,
+    input nivel_concluido,
+    input nivelIgualUltimoNivel,
+    input nivelMenorOuIgualUltimoNivel,
+    output reg ganhou,
+    output reg contaN,
+    output reg zeraN,
+    output reg zeraM,
+    output reg [4:0] db_estado
+);
+
+    // Define estados
+    parameter inicial            = 5&apos;b00000;  // 0
+    parameter preparacao         = 5&apos;b00001;  // 1
+    parameter inic_nivel         = 5&apos;b00010;  // 2
+    parameter jogando            = 5&apos;b00011;  // 3
+    parameter checa_ultimo_nivel = 5&apos;b00100;  // 4
+    parameter proximo_nivel      = 5&apos;b00101;  // 5
+    parameter estabiliza_matriz  = 5&apos;b00110;  // 6
+    parameter estabiliza_matriz1 = 5&apos;b00111;  // 7
+    parameter est_ganhou         = 5&apos;b01000;  // 8 
+
+
+    // Variaveis de estado
+    reg [4:0] Eatual, Eprox;
+
+    // Memoria de estado
+    always @(posedge clock or posedge reset) begin
+        if (reset)
+            Eatual &lt;= inicial;
+        else
+            Eatual &lt;= Eprox;
+    end
+
+    // Logica de proximo estado
+    always @* begin
+        case (Eatual)
+            inicial:            Eprox = iniciar ? preparacao : inicial;
+            preparacao:         Eprox = inic_nivel;
+            inic_nivel:         Eprox = jogando;
+            jogando:            Eprox = nivel_concluido ? checa_ultimo_nivel : jogando;
+            checa_ultimo_nivel: 
+            begin 
+                if (nivelIgualUltimoNivel)
+                    Eprox =  est_ganhou;
+                else 
+                    Eprox = estabiliza_matriz;
+            end
+            estabiliza_matriz:  Eprox = estabiliza_matriz1;
+            estabiliza_matriz1: Eprox = proximo_nivel;
+            proximo_nivel:      Eprox = inic_nivel;
+            est_ganhou:         Eprox = iniciar ? preparacao : est_ganhou;
+            default:            Eprox = inicial;
+        endcase
+    end
+
+    // Logica de saida (maquina Moore)
+    always @* begin
+        // Inicializa todas as saídas com valores padrão
+        contaN       = 1&apos;b0;
+        zeraN        = 1&apos;b0;
+        zeraM        = 1&apos;b0;
+        ganhou       = 1&apos;b0;
+
+        // Define sinais de controle
+        case (Eatual)
+            inicial: begin
+                zeraN = 1&apos;b1;
+                zeraM = 1&apos;b1;
+            end
+
+            preparacao: begin
+                zeraN = 1&apos;b1;
+                zeraM = 1&apos;b1;
+            end
+
+            inic_nivel: begin
+                zeraM = 1&apos;b1;
+            end
+
+            proximo_nivel: begin
+                contaN = 1&apos;b1;
+            end
+
+            est_ganhou: begin
+                ganhou = 1&apos;b1;
+            end
+
+            default: begin
+                // Mantém os sinais padrão
+            end
+        endcase
+
+        // Saida de depuracao (estado)
+        case (Eatual)
+            inicial:            db_estado = 5&apos;b00000;  // 0 
+            preparacao:         db_estado = 5&apos;b00001;  // 1
+            inic_nivel:         db_estado = 5&apos;b00010;  // 2
+            jogando:            db_estado = 5&apos;b00011;  // 3
+            checa_ultimo_nivel: db_estado = 5&apos;b00100;  // 4
+            proximo_nivel:      db_estado = 5&apos;b00101;  // 5
+            estabiliza_matriz:  db_estado = 5&apos;b00110;  // 6
+            estabiliza_matriz1: db_estado = 5&apos;b00111;  // 7
+            est_ganhou:         db_estado = 5&apos;b01000;  // 8 
+            default:            db_estado = 5&apos;b11111;  // E (erro)
+        endcase
+    end
+
+endmodule
+
+
+
+
+/* ----------------------------------------------------------------
+ * Arquivo   : hexa7seg.v
+ * Projeto   : Experiencia 2 - Um Fluxo de Dados Simples
+ *--------------------------------------------------------------
+ * Descricao : decodificador hexadecimal para 
+ *             display de 7 segmentos 
+ * 
+ * entrada : hexa - codigo binario de 4 bits hexadecimal
+ * saida   : sseg - codigo de 7 bits para display de 7 segmentos
+ *
+ * baseado no componente bcd7seg.v da Intel FPGA
+ *--------------------------------------------------------------
+ * dica de uso: mapeamento para displays da placa DE0-CV
+ *              bit 6 mais significativo é o bit a esquerda
+ *              p.ex. sseg(6) -&gt; HEX0[6] ou HEX06
+ *--------------------------------------------------------------
+ * Revisoes  :
+ *     Data        Versao  Autor             Descricao
+ *     24/12/2023  1.0     Edson Midorikawa  criacao
+ *--------------------------------------------------------------
+ */
+
+module hexa7seg_ent3bit (hexa, display);
+    input      [2:0] hexa;
+    output reg [6:0] display;
+
+    /*
+     *    ---
+     *   | 0 |
+     * 5 |   | 1
+     *   |   |
+     *    ---
+     *   | 6 |
+     * 4 |   | 2
+     *   |   |
+     *    ---
+     *     3
+     */
+        
+    always @(hexa)
+    case (hexa)
+        3&apos;h0:    display = 7&apos;b1000000;
+        3&apos;h1:    display = 7&apos;b1111001;
+        3&apos;h2:    display = 7&apos;b0100100;
+        3&apos;h3:    display = 7&apos;b0110000;
+        3&apos;h4:    display = 7&apos;b0011001;
+        3&apos;h5:    display = 7&apos;b0010010;
+        3&apos;h6:    display = 7&apos;b0000010;
+        3&apos;h7:    display = 7&apos;b1111000;
+        default: display = 7&apos;b1111111;
+    endcase
+endmodule
+
+/* ----------------------------------------------------------------
+ * Arquivo   : hexa7seg.v
+ * Projeto   : Experiencia 2 - Um Fluxo de Dados Simples
+ *--------------------------------------------------------------
+ * Descricao : decodificador hexadecimal para 
+ *             display de 7 segmentos 
+ * 
+ * entrada : hexa - codigo binario de 4 bits hexadecimal
+ * saida   : sseg - codigo de 7 bits para display de 7 segmentos
+ *
+ * baseado no componente bcd7seg.v da Intel FPGA
+ *--------------------------------------------------------------
+ * dica de uso: mapeamento para displays da placa DE0-CV
+ *              bit 6 mais significativo é o bit a esquerda
+ *              p.ex. sseg(6) -&gt; HEX0[6] ou HEX06
+ *--------------------------------------------------------------
+ * Revisoes  :
+ *     Data        Versao  Autor             Descricao
+ *     24/12/2023  1.0     Edson Midorikawa  criacao
+ *--------------------------------------------------------------
+ */
+
+module hexa7seg_ent8bit (hexa, display);
+    input      [7:0] hexa;
+    output reg [6:0] display;
+
+    /*
+     *    ---
+     *   | 0 |
+     * 5 |   | 1
+     *   |   |
+     *    ---
+     *   | 6 |
+     * 4 |   | 2
+     *   |   |
+     *    ---
+     *     3
+     */
+        
+    always @(hexa)
+    case (hexa)
+        8&apos;b00000001:    display = 7&apos;b1000000;
+        8&apos;b00000010:    display = 7&apos;b1111001;
+        8&apos;b00000100:    display = 7&apos;b0100100;
+        8&apos;b00001000:    display = 7&apos;b0110000;
+        8&apos;b00010000:    display = 7&apos;b0011001;
+        8&apos;b00100000:    display = 7&apos;b0010010;
+        8&apos;b01000000:    display = 7&apos;b0000010;
+        8&apos;b10000000:    display = 7&apos;b1111000;
+        default: display = 7&apos;b1111111;
+    endcase
+endmodule
+
+/* -----------------------------------------------------------------
+ *  Arquivo   : comparador_85.v
+ *  Projeto   : Experiencia 2 - Um Fluxo de Dados Simples
+ * -----------------------------------------------------------------
+ * Descricao : comparador de magnitude de 4 bits 
+ *             similar ao CI 7485
+ *             baseado em descricao comportamental disponivel em	
+ * https://web.eecs.umich.edu/~jhayes/iscas.restore/74L85b.v
+ * -----------------------------------------------------------------
+ * Revisoes  :
+ *     Data        Versao  Autor             Descricao
+ *     21/12/2023  1.0     Edson Midorikawa  criacao
+ * -----------------------------------------------------------------
+ */
+
+module comparador_85 (ALBi, AGBi, AEBi, A, B, ALBo, AGBo, AEBo);
+
+    input[2:0] A, B;
+    input      ALBi, AGBi, AEBi;
+    output     ALBo, AGBo, AEBo;
+    wire[3:0]  CSL, CSG;
+
+    assign CSL  = ~A + B + ALBi;
+    assign ALBo = ~CSL[3];
+    assign CSG  = A + ~B + AGBi;
+    assign AGBo = ~CSG[3];
+    assign AEBo = ((A == B) &amp;&amp; AEBi);
+
+endmodule /* comparador_85 */
+
+//------------------------------------------------------------------
+// Arquivo   : contador_163.v
+// Projeto   : Experiencia 2 - Um Fluxo de Dados Simples
+//------------------------------------------------------------------
+// Descricao : Contador binario de 4 bits, modulo 16
+//             similar ao componente 74163
+//
+// baseado no componente Vrcntr4u.v do livro Digital Design Principles 
+// and Practices, Fifth Edition, by John F. Wakerly              
+//------------------------------------------------------------------
+// Revisoes  :
+//     Data        Versao  Autor             Descricao
+//     14/12/2023  1.0     Edson Midorikawa  versao inicial
+//------------------------------------------------------------------
+//
+module contador_163 ( clock, clr, ld, ent, enp, D, Q, rco );
+    input clock, clr, ld, ent, enp;
+    input [2:0] D;
+    output reg [2:0] Q;
+    output reg rco;
+
+    always @ (posedge clock)
+        if (~clr)               Q &lt;= 3&apos;d0;
+        else if (~ld)           Q &lt;= D;
+        else if (ent &amp;&amp; enp)    Q &lt;= Q + 1&apos;b1;
+        else                    Q &lt;= Q;
+ 
+    always @ (Q or ent)
+        if (ent &amp;&amp; (Q == 3&apos;d7))    rco = 1;
+        else                       rco = 0;
+endmodule
+
+module edge_detector_global (
+    input  clock,
+    input  reset,
+    input  [7:0] botoes,
+    output reg [7:0] edge_detected
+);
+
+    reg [7:0] botoes_anterior;
+
+    always @(posedge clock or posedge reset) begin
+        if (reset) begin
+            botoes_anterior &lt;= 8&apos;b00000000;  // Zera valores
+            edge_detected   &lt;= 8&apos;b00000000;  // Zera saida
+        end else begin
+            edge_detected   &lt;= (botoes &amp; ~botoes_anterior); // Detecta borda de subida para todos os botões
+            botoes_anterior &lt;= botoes; // Atualiza o estado anterior
+        end
+    end
+endmodule
+
+/*
+    Este módulo é o controlador de uma matriz de leds. Ele trata as linhas da matriz como terra e as 
+    colunas como fase, logo, para ativar algo na linha 5, ele faz linhas = 01111 e ativa o que quiser
+    nas colunas. 
+
+
+    */
+
+module matriz_leds_dig (
+    input clk,                  // Clock principal da FPGA
+    input rst,                  // Botão de reset
+    input [7:0] botoes,         // Entrada dos botões físicos
+    input [2:0] nivel,          // Nivel atual do jogador
+    output reg nivel_concluido, // Output que avisa a UC se venceu
+    output [7:0] colunas,       // Sinais para as colunas da matriz de LEDs
+    output [2:0] linhas,        // Sinais para ativar linhas da matriz
+    output [2:0] db_linha,
+    output db_clock,
+    output db_reset
+);
+
+    reg [7:0] estado_leds [7:0]; // Matriz virtual para armazenar estado das LEDs
+    reg [2:0] linha_atual;       // Variável para escanear as linhas
+    integer i, j;
+
+    initial begin
+        for (i = 0; i &lt; 8; i = i + 1) begin
+            for (j = 0; j &lt; 8; j = j + 1) begin
+                    estado_leds[i][j] &lt;= 0; // Desliga todas as LEDs
+            end 
+        end 
+        linha_atual = 0;
+    end
+
+    // Checa condição de vitória com base no nível atual
+    always @(posedge clk or posedge rst) begin
+        if (rst) begin
+            nivel_concluido &lt;= 0;
+        end else begin
+            case (nivel) 
+                3&apos;b000: nivel_concluido &lt;= (estado_leds[0] == 8&apos;b11111111);
+                3&apos;b001: nivel_concluido &lt;= (estado_leds[0] == 8&apos;b11111111) &amp;&amp; (estado_leds[1] == 8&apos;b11111111) &amp;&amp; (estado_leds[2] == 8&apos;b11111111);
+                3&apos;b010: nivel_concluido &lt;= (estado_leds[0] == 8&apos;b11111111) &amp;&amp; (estado_leds[1] == 8&apos;b11111111) &amp;&amp; (estado_leds[2] == 8&apos;b11111111) &amp;&amp; (estado_leds[3] == 8&apos;b11111111) &amp;&amp; (estado_leds[4] == 8&apos;b11111111);
+                3&apos;b011: nivel_concluido &lt;= (estado_leds[0] == 8&apos;b11111111) &amp;&amp; (estado_leds[1] == 8&apos;b11111111) &amp;&amp; (estado_leds[2] == 8&apos;b11111111) &amp;&amp; (estado_leds[3] == 8&apos;b11111111) &amp;&amp; (estado_leds[4] == 8&apos;b11111111) &amp;&amp; (estado_leds[5] == 8&apos;b11111111) &amp;&amp; (estado_leds[6] == 8&apos;b11111111);
+                3&apos;b100: nivel_concluido &lt;= (estado_leds[0] == 8&apos;b11111111) &amp;&amp; (estado_leds[1] == 8&apos;b11111111) &amp;&amp; (estado_leds[2] == 8&apos;b11111111) &amp;&amp; (estado_leds[3] == 8&apos;b11111111) &amp;&amp; (estado_leds[4] == 8&apos;b11111111) &amp;&amp; (estado_leds[5] == 8&apos;b11111111) &amp;&amp; (estado_leds[6] == 8&apos;b11111111) &amp;&amp; (estado_leds[7] == 8&apos;b11111111);
+                default: nivel_concluido &lt;= 0;
+            endcase
+        end
+    end
+
+    // Reset: Apaga todas as LEDs no início
+    always @(posedge clk or posedge rst) begin
+        i = 0;
+        j = 0; 
+
+        if (rst) begin
+            for (i = 0; i &lt; 8; i = i + 1) begin
+                for (j = 0; j &lt; 8; j = j + 1) begin
+                    estado_leds[i][j] &lt;= 0;       // Desliga todas as LEDs
+                end 
+            end 
+        end else begin
+            // Controle das LEDs pelos botões
+            if (botoes[0]) begin 
+                estado_leds[0][0] &lt;= ~estado_leds[0][0];
+                estado_leds[0][1] &lt;= ~estado_leds[0][1];
+                estado_leds[0][2] &lt;= ~estado_leds[0][2];
+                estado_leds[1][0] &lt;= ~estado_leds[1][0];
+                estado_leds[1][1] &lt;= ~estado_leds[1][1];
+                estado_leds[1][2] &lt;= ~estado_leds[1][2];
+                estado_leds[2][0] &lt;= ~estado_leds[2][0];
+                estado_leds[2][1] &lt;= ~estado_leds[2][1];
+                estado_leds[2][2] &lt;= ~estado_leds[2][2];
+            end 
+
+            if (botoes[1]) begin
+                estado_leds[3][0] &lt;= ~estado_leds[3][0];
+                estado_leds[3][1] &lt;= ~estado_leds[3][1];
+                estado_leds[3][2] &lt;= ~estado_leds[3][2];
+                estado_leds[4][0] &lt;= ~estado_leds[4][0];
+                estado_leds[4][1] &lt;= ~estado_leds[4][1];
+                estado_leds[5][0] &lt;= ~estado_leds[5][0];
+                estado_leds[5][1] &lt;= ~estado_leds[5][1];
+                estado_leds[6][0] &lt;= ~estado_leds[6][0];
+                estado_leds[6][1] &lt;= ~estado_leds[6][1];
+            end
+            if (botoes[2]) begin
+                estado_leds[4][2] &lt;= ~estado_leds[4][2];
+                estado_leds[5][2] &lt;= ~estado_leds[5][2];
+                estado_leds[5][3] &lt;= ~estado_leds[5][3];
+                estado_leds[6][2] &lt;= ~estado_leds[6][2];
+                estado_leds[7][0] &lt;= ~estado_leds[7][0];
+                estado_leds[7][1] &lt;= ~estado_leds[7][1];
+                estado_leds[7][2] &lt;= ~estado_leds[7][2];
+            end
+        
+            if (botoes[3]) begin
+                estado_leds[5][4] &lt;= ~estado_leds[5][4];
+                estado_leds[5][5] &lt;= ~estado_leds[5][5];
+                estado_leds[6][3] &lt;= ~estado_leds[6][3];
+                estado_leds[6][4] &lt;= ~estado_leds[6][4];
+                estado_leds[6][5] &lt;= ~estado_leds[6][5];
+                estado_leds[7][3] &lt;= ~estado_leds[7][3];
+                estado_leds[7][4] &lt;= ~estado_leds[7][4];
+                estado_leds[7][5] &lt;= ~estado_leds[7][5];
+            end
+            if (botoes[4]) begin
+                estado_leds[0][3] &lt;= ~estado_leds[0][3];
+                estado_leds[0][4] &lt;= ~estado_leds[0][4];
+                estado_leds[1][3] &lt;= ~estado_leds[1][3];
+                estado_leds[1][4] &lt;= ~estado_leds[1][4];
+                estado_leds[2][3] &lt;= ~estado_leds[2][3];
+                estado_leds[2][4] &lt;= ~estado_leds[2][4];
+                estado_leds[3][3] &lt;= ~estado_leds[3][3];
+                estado_leds[3][4] &lt;= ~estado_leds[3][4];
+                estado_leds[4][3] &lt;= ~estado_leds[4][3];
+            end
+            if (botoes[5]) begin
+                estado_leds[0][5] &lt;= ~estado_leds[0][5];
+                estado_leds[1][5] &lt;= ~estado_leds[1][5];
+                estado_leds[2][5] &lt;= ~estado_leds[2][5];
+                estado_leds[2][6] &lt;= ~estado_leds[2][6];
+                estado_leds[3][5] &lt;= ~estado_leds[3][5];
+                estado_leds[4][4] &lt;= ~estado_leds[4][4];
+                estado_leds[4][5] &lt;= ~estado_leds[4][5];
+                estado_leds[4][6] &lt;= ~estado_leds[4][6];
+            end
+            if (botoes[6]) begin
+                estado_leds[5][6] &lt;= ~estado_leds[5][6];
+                estado_leds[5][7] &lt;= ~estado_leds[5][7];
+                estado_leds[6][6] &lt;= ~estado_leds[6][6];
+                estado_leds[6][7] &lt;= ~estado_leds[6][7];
+                estado_leds[7][6] &lt;= ~estado_leds[7][6];
+                estado_leds[7][7] &lt;= ~estado_leds[7][7];
+            end
+            if (botoes[7]) begin
+                estado_leds[0][6] &lt;= ~estado_leds[0][6];
+                estado_leds[0][7] &lt;= ~estado_leds[0][7];
+                estado_leds[1][6] &lt;= ~estado_leds[1][6];
+                estado_leds[1][7] &lt;= ~estado_leds[1][7];
+                estado_leds[2][7] &lt;= ~estado_leds[2][7];
+                estado_leds[3][6] &lt;= ~estado_leds[3][6];
+                estado_leds[3][7] &lt;= ~estado_leds[3][7];
+                estado_leds[4][7] &lt;= ~estado_leds[4][7];
+            end
+        end
+    end
+
+    // Ciclo para alternar entre as linhas da matriz
+    always @(posedge clk) begin
+        case (nivel) 
+            3&apos;b000: begin
+                if (linha_atual &lt; 3&apos;b000)
+                    linha_atual &lt;= linha_atual + 1;
+                else
+                    linha_atual &lt;= 3&apos;b000;
+            end
+            3&apos;b001: begin
+                if (linha_atual &lt; 3&apos;b010)
+                    linha_atual &lt;= linha_atual + 1;
+                else
+                    linha_atual &lt;= 3&apos;b000;
+            end
+            3&apos;b010: begin
+                if (linha_atual &lt; 3&apos;b100)
+                    linha_atual &lt;= linha_atual + 1;
+                else
+                    linha_atual &lt;= 3&apos;b000;
+            end
+            3&apos;b011: begin
+                if (linha_atual &lt; 3&apos;b110)
+                    linha_atual &lt;= linha_atual + 1;
+                else
+                    linha_atual &lt;= 3&apos;b000;
+            end
+            3&apos;b100: begin
+                if (linha_atual &lt; 3&apos;b111)
+                    linha_atual &lt;= linha_atual + 1;
+                else
+                    linha_atual &lt;= 3&apos;b000;
+            end
+            default: begin
+                nivel_concluido &lt;= 1&apos;b0; // Apenas se precisar sinalizar algo
+            end
+        endcase
+    end
+
+    // Ativação da linha atual (apenas uma linha por vez)
+    assign linhas = linha_atual;
+    
+
+    // Colunas recebem valores da linha ativa
+    assign colunas = estado_leds[linha_atual];  
+
+    assign db_linha = linha_atual;
+    assign db_clock = clk;
+    assign db_reset = rst;
+
+endmodule
+
+
+module hexa7seg_mod (hexa, display);
+    input      [4:0] hexa;
+    output reg [6:0] display;
+
+    /*
+     *    ---
+     *   | 0 |
+     * 5 |   | 1
+     *   |   |
+     *    ---
+     *   | 6 |
+     * 4 |   | 2
+     *   |   |
+     *    ---
+     *     3
+     */
+        
+    always @(hexa)
+    case (hexa)
+        5&apos;h0:    display = 7&apos;b1000000;
+        5&apos;h1:    display = 7&apos;b1111001;
+        5&apos;h2:    display = 7&apos;b0100100;
+        5&apos;h3:    display = 7&apos;b0110000;
+        5&apos;h4:    display = 7&apos;b0011001;
+        5&apos;h5:    display = 7&apos;b0010010;
+        5&apos;h6:    display = 7&apos;b0000010;
+        5&apos;h7:    display = 7&apos;b1111000;
+        5&apos;h8:    display = 7&apos;b0000000;
+        5&apos;h9:    display = 7&apos;b0010000;
+        5&apos;ha:    display = 7&apos;b0001000;
+        5&apos;hb:    display = 7&apos;b0000011;
+        5&apos;hc:    display = 7&apos;b1000110;
+        5&apos;hd:    display = 7&apos;b1000111;       // Alterado para &quot;L&quot; por motivos de liberdade poética, originalmente 7&apos;b0100001
+        5&apos;he:    display = 7&apos;b0000110;
+        5&apos;hf:    display = 7&apos;b0001110;
+        5&apos;h10:   display = 7&apos;b1111110;  
+        5&apos;h11:   display = 7&apos;b1111101;  
+        5&apos;h12:   display = 7&apos;b1111011;  
+        5&apos;h13:   display = 7&apos;b1110111; 
+        5&apos;h14:   display = 7&apos;b1101111;
+        5&apos;h15:   display = 7&apos;b1011111;
+        5&apos;h16:   display = 7&apos;b0111111;
+        5&apos;h17:   display = 7&apos;b1111100;
+        5&apos;h18:   display = 7&apos;b0111100;
+        5&apos;h19:   display = 7&apos;b0011100;
+        5&apos;h1a:   display = 7&apos;b1110011;
+        5&apos;h1b:   display = 7&apos;b1100011;
+        5&apos;h1c:   display = 7&apos;b0100011;
+        5&apos;h1d:   display = 7&apos;b1011101;
+        5&apos;h1e:   display = 7&apos;b1101011;
+        5&apos;h1f:   display = 7&apos;b1001001;
+        default: display = 7&apos;b1111111;
+    endcase
+endmodule</string>
+        </entry>
+        <entry>
+          <string>externalOutputs</string>
+          <string>colunas:8,linhas:3,ganhou,db_estado:7,db_nivel:7,db_botoes:7</string>
+        </entry>
+      </elementAttributes>
+      <pos x="600" y="160"/>
+    </visualElement>
+    <visualElement>
+      <elementName>Clock</elementName>
+      <elementAttributes>
+        <entry>
+          <string>runRealTime</string>
+          <boolean>true</boolean>
+        </entry>
+        <entry>
+          <string>Label</string>
+          <string>clk</string>
+        </entry>
+        <entry>
+          <string>Frequency</string>
+          <int>5000</int>
+        </entry>
+      </elementAttributes>
+      <pos x="380" y="40"/>
+    </visualElement>
+    <visualElement>
+      <elementName>Button</elementName>
+      <elementAttributes>
+        <entry>
+          <string>Label</string>
+          <string>botao[0]</string>
+        </entry>
+      </elementAttributes>
+      <pos x="280" y="180"/>
+    </visualElement>
+    <visualElement>
+      <elementName>Button</elementName>
+      <elementAttributes>
+        <entry>
+          <string>Label</string>
+          <string>botao[1]</string>
+        </entry>
+      </elementAttributes>
+      <pos x="280" y="220"/>
+    </visualElement>
+    <visualElement>
+      <elementName>Button</elementName>
+      <elementAttributes>
+        <entry>
+          <string>Label</string>
+          <string>botao[2]</string>
+        </entry>
+      </elementAttributes>
+      <pos x="280" y="260"/>
+    </visualElement>
+    <visualElement>
+      <elementName>Button</elementName>
+      <elementAttributes>
+        <entry>
+          <string>Label</string>
+          <string>botao[3]</string>
+        </entry>
+      </elementAttributes>
+      <pos x="280" y="300"/>
+    </visualElement>
+    <visualElement>
+      <elementName>Button</elementName>
+      <elementAttributes>
+        <entry>
+          <string>Label</string>
+          <string>botao[4]</string>
+        </entry>
+      </elementAttributes>
+      <pos x="280" y="340"/>
+    </visualElement>
+    <visualElement>
+      <elementName>Button</elementName>
+      <elementAttributes>
+        <entry>
+          <string>Label</string>
+          <string>botao[5]</string>
+        </entry>
+      </elementAttributes>
+      <pos x="280" y="380"/>
+    </visualElement>
+    <visualElement>
+      <elementName>Splitter</elementName>
+      <elementAttributes>
+        <entry>
+          <string>Input Splitting</string>
+          <string>1,1,1,1,1,1,1,1</string>
+        </entry>
+      </elementAttributes>
+      <pos x="480" y="200"/>
+    </visualElement>
+    <visualElement>
+      <elementName>Button</elementName>
+      <elementAttributes>
+        <entry>
+          <string>Label</string>
+          <string>botao[6]</string>
+        </entry>
+      </elementAttributes>
+      <pos x="280" y="420"/>
+    </visualElement>
+    <visualElement>
+      <elementName>Button</elementName>
+      <elementAttributes>
+        <entry>
+          <string>Label</string>
+          <string>botao[7]</string>
+        </entry>
+      </elementAttributes>
+      <pos x="280" y="460"/>
+    </visualElement>
+    <visualElement>
+      <elementName>Button</elementName>
+      <elementAttributes>
+        <entry>
+          <string>Label</string>
+          <string>rst</string>
+        </entry>
+      </elementAttributes>
+      <pos x="460" y="80"/>
+    </visualElement>
+    <visualElement>
+      <elementName>Button</elementName>
+      <elementAttributes>
+        <entry>
+          <string>Label</string>
+          <string>Jogar</string>
+        </entry>
+      </elementAttributes>
+      <pos x="460" y="140"/>
+    </visualElement>
+    <visualElement>
+      <elementName>LedMatrix</elementName>
+      <elementAttributes>
+        <entry>
+          <string>ledPersistence</string>
+          <boolean>true</boolean>
+        </entry>
+        <entry>
+          <string>Label</string>
+          <string>matriz_leds</string>
+        </entry>
+      </elementAttributes>
+      <pos x="1280" y="160"/>
+    </visualElement>
+    <visualElement>
+      <elementName>Out</elementName>
+      <elementAttributes>
+        <entry>
+          <string>Label</string>
+          <string>col</string>
+        </entry>
+        <entry>
+          <string>Bits</string>
+          <int>8</int>
+        </entry>
+      </elementAttributes>
+      <pos x="1340" y="320"/>
+    </visualElement>
+    <visualElement>
+      <elementName>Out</elementName>
+      <elementAttributes>
+        <entry>
+          <string>Label</string>
+          <string>linhas</string>
+        </entry>
+        <entry>
+          <string>Bits</string>
+          <int>3</int>
+        </entry>
+      </elementAttributes>
+      <pos x="1340" y="380"/>
+    </visualElement>
+    <visualElement>
+      <elementName>LED</elementName>
+      <elementAttributes>
+        <entry>
+          <string>Label</string>
+          <string>Ganhou</string>
+        </entry>
+      </elementAttributes>
+      <pos x="1240" y="440"/>
+    </visualElement>
+    <visualElement>
+      <elementName>Out</elementName>
+      <elementAttributes>
+        <entry>
+          <string>Label</string>
+          <string>db_estado</string>
+        </entry>
+        <entry>
+          <string>Bits</string>
+          <int>7</int>
+        </entry>
+      </elementAttributes>
+      <pos x="1240" y="500"/>
+    </visualElement>
+    <visualElement>
+      <elementName>Out</elementName>
+      <elementAttributes>
+        <entry>
+          <string>Label</string>
+          <string>db_nivel</string>
+        </entry>
+        <entry>
+          <string>Bits</string>
+          <int>7</int>
+        </entry>
+      </elementAttributes>
+      <pos x="1240" y="560"/>
+    </visualElement>
+    <visualElement>
+      <elementName>Out</elementName>
+      <elementAttributes>
+        <entry>
+          <string>Label</string>
+          <string>db_botoes</string>
+        </entry>
+        <entry>
+          <string>Bits</string>
+          <int>7</int>
+        </entry>
+      </elementAttributes>
+      <pos x="1240" y="620"/>
+    </visualElement>
+  </visualElements>
+  <wires>
+    <wire>
+      <p1 x="460" y="320"/>
+      <p2 x="480" y="320"/>
+    </wire>
+    <wire>
+      <p1 x="1240" y="320"/>
+      <p2 x="1340" y="320"/>
+    </wire>
+    <wire>
+      <p1 x="580" y="160"/>
+      <p2 x="600" y="160"/>
+    </wire>
+    <wire>
+      <p1 x="960" y="160"/>
+      <p2 x="1240" y="160"/>
+    </wire>
+    <wire>
+      <p1 x="1240" y="160"/>
+      <p2 x="1280" y="160"/>
+    </wire>
+    <wire>
+      <p1 x="400" y="260"/>
+      <p2 x="480" y="260"/>
+    </wire>
+    <wire>
+      <p1 x="280" y="260"/>
+      <p2 x="360" y="260"/>
+    </wire>
+    <wire>
+      <p1 x="960" y="260"/>
+      <p2 x="1020" y="260"/>
+    </wire>
+    <wire>
+      <p1 x="280" y="420"/>
+      <p2 x="460" y="420"/>
+    </wire>
+    <wire>
+      <p1 x="380" y="40"/>
+      <p2 x="580" y="40"/>
+    </wire>
+    <wire>
+      <p1 x="360" y="200"/>
+      <p2 x="480" y="200"/>
+    </wire>
+    <wire>
+      <p1 x="520" y="200"/>
+      <p2 x="600" y="200"/>
+    </wire>
+    <wire>
+      <p1 x="960" y="200"/>
+      <p2 x="1140" y="200"/>
+    </wire>
+    <wire>
+      <p1 x="280" y="300"/>
+      <p2 x="400" y="300"/>
+    </wire>
+    <wire>
+      <p1 x="440" y="300"/>
+      <p2 x="480" y="300"/>
+    </wire>
+    <wire>
+      <p1 x="280" y="460"/>
+      <p2 x="480" y="460"/>
+    </wire>
+    <wire>
+      <p1 x="460" y="140"/>
+      <p2 x="520" y="140"/>
+    </wire>
+    <wire>
+      <p1 x="1020" y="620"/>
+      <p2 x="1240" y="620"/>
+    </wire>
+    <wire>
+      <p1 x="460" y="80"/>
+      <p2 x="560" y="80"/>
+    </wire>
+    <wire>
+      <p1 x="360" y="240"/>
+      <p2 x="480" y="240"/>
+    </wire>
+    <wire>
+      <p1 x="960" y="240"/>
+      <p2 x="1060" y="240"/>
+    </wire>
+    <wire>
+      <p1 x="1060" y="560"/>
+      <p2 x="1240" y="560"/>
+    </wire>
+    <wire>
+      <p1 x="280" y="180"/>
+      <p2 x="360" y="180"/>
+    </wire>
+    <wire>
+      <p1 x="560" y="180"/>
+      <p2 x="600" y="180"/>
+    </wire>
+    <wire>
+      <p1 x="960" y="180"/>
+      <p2 x="1180" y="180"/>
+    </wire>
+    <wire>
+      <p1 x="1180" y="180"/>
+      <p2 x="1280" y="180"/>
+    </wire>
+    <wire>
+      <p1 x="280" y="340"/>
+      <p2 x="420" y="340"/>
+    </wire>
+    <wire>
+      <p1 x="1100" y="500"/>
+      <p2 x="1240" y="500"/>
+    </wire>
+    <wire>
+      <p1 x="420" y="280"/>
+      <p2 x="480" y="280"/>
+    </wire>
+    <wire>
+      <p1 x="1140" y="440"/>
+      <p2 x="1240" y="440"/>
+    </wire>
+    <wire>
+      <p1 x="280" y="380"/>
+      <p2 x="440" y="380"/>
+    </wire>
+    <wire>
+      <p1 x="1180" y="380"/>
+      <p2 x="1340" y="380"/>
+    </wire>
+    <wire>
+      <p1 x="280" y="220"/>
+      <p2 x="480" y="220"/>
+    </wire>
+    <wire>
+      <p1 x="500" y="220"/>
+      <p2 x="600" y="220"/>
+    </wire>
+    <wire>
+      <p1 x="960" y="220"/>
+      <p2 x="1100" y="220"/>
+    </wire>
+    <wire>
+      <p1 x="480" y="340"/>
+      <p2 x="480" y="460"/>
+    </wire>
+    <wire>
+      <p1 x="580" y="40"/>
+      <p2 x="580" y="160"/>
+    </wire>
+    <wire>
+      <p1 x="420" y="280"/>
+      <p2 x="420" y="340"/>
+    </wire>
+    <wire>
+      <p1 x="1060" y="240"/>
+      <p2 x="1060" y="560"/>
+    </wire>
+    <wire>
+      <p1 x="360" y="240"/>
+      <p2 x="360" y="260"/>
+    </wire>
+    <wire>
+      <p1 x="360" y="180"/>
+      <p2 x="360" y="200"/>
+    </wire>
+    <wire>
+      <p1 x="520" y="140"/>
+      <p2 x="520" y="200"/>
+    </wire>
+    <wire>
+      <p1 x="460" y="320"/>
+      <p2 x="460" y="420"/>
+    </wire>
+    <wire>
+      <p1 x="1100" y="220"/>
+      <p2 x="1100" y="500"/>
+    </wire>
+    <wire>
+      <p1 x="560" y="80"/>
+      <p2 x="560" y="180"/>
+    </wire>
+    <wire>
+      <p1 x="400" y="260"/>
+      <p2 x="400" y="300"/>
+    </wire>
+    <wire>
+      <p1 x="500" y="200"/>
+      <p2 x="500" y="220"/>
+    </wire>
+    <wire>
+      <p1 x="1140" y="200"/>
+      <p2 x="1140" y="440"/>
+    </wire>
+    <wire>
+      <p1 x="440" y="300"/>
+      <p2 x="440" y="380"/>
+    </wire>
+    <wire>
+      <p1 x="1240" y="160"/>
+      <p2 x="1240" y="320"/>
+    </wire>
+    <wire>
+      <p1 x="1180" y="180"/>
+      <p2 x="1180" y="380"/>
+    </wire>
+    <wire>
+      <p1 x="1020" y="260"/>
+      <p2 x="1020" y="620"/>
+    </wire>
+  </wires>
+  <measurementOrdering/>
+</circuit>
