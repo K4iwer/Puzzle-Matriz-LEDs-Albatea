@@ -26,7 +26,7 @@ module matriz_leds (
                     estado_leds[i][j] <= 0; // Desliga todas as LEDs
             end 
         end 
-        linha_atual = 0;
+        linha_atual = 8'b00000001;
     end
 
     // Checa condição de vitória com base no nível atual
@@ -148,36 +148,36 @@ module matriz_leds (
         case (nivel) 
             3'b000: begin
                 if (linha_atual < 8'b00000001)
-                    linha_atual <= linha_atual + 1;
+                    linha_atual <= linha_atual << 1;
                 else
                     linha_atual <= 8'b00000000;
             end
             3'b001: begin
                 if (linha_atual < 8'b00000100)
-                    linha_atual <= linha_atual + 1;
+                    linha_atual <= linha_atual << 1;
                 else
                     linha_atual <= 8'b00000000;
             end
             3'b010: begin
                 if (linha_atual < 8'b00010000)
-                    linha_atual <= linha_atual + 1;
+                    linha_atual <= linha_atual << 1;
                 else
                     linha_atual <= 8'b00000000;
             end
             3'b011: begin
                 if (linha_atual < 8'b01000000)
-                    linha_atual <= linha_atual + 1;
+                    linha_atual <= linha_atual << 1;
                 else
                     linha_atual <= 8'b00000000;
             end
             3'b100: begin
                 if (linha_atual < 8'b10000000)
-                    linha_atual <= linha_atual + 1;
+                    linha_atual <= linha_atual << 1;
                 else
                     linha_atual <= 8'b00000000;
             end
             default: begin
-                nivel_concluido <= 1'b0; // Apenas se precisar sinalizar
+                    linha_atual <= 8'b00000000;
             end
         endcase
     end
