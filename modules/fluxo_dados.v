@@ -70,8 +70,16 @@ module fluxo_dados (
     .edge_detected ( s_botoes )
   );
 
+  // registrador do db_botões
+  registrador_8 reg_botoes (
+    .clock         ( clock ),
+    .clear         ( zeraM ),
+    .enable        ( 1'b1  ),
+    .D             ( botoes ),
+    .Q             ( db_botoes )
+  );
+
   // saida de depuracao
-  assign db_botoes = s_botoes;
   assign db_nivel  = s_nivel;
 
 endmodule
