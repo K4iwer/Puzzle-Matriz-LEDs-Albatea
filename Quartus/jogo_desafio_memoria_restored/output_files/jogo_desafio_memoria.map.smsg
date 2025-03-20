@@ -1,0 +1,1 @@
+Warning (10268): Verilog HDL information at matriz_leds.v(49): always construct contains both blocking and non-blocking assignments File: //wsl.localhost/Ubuntu/home/pacha/labdig/Puzzle-Matriz-LEDs/Quartus/jogo_desafio_memoria_restored/matriz_leds.v Line: 49

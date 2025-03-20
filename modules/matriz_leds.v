@@ -4,7 +4,7 @@
     nas colunas. 
 
 
-    */
+*/
 
 module matriz_leds (
     input clk,              // Clock principal da FPGA
@@ -187,6 +187,6 @@ module matriz_leds (
     
 
     // Colunas recebem valores da linha ativa
-    assign colunas = estado_leds[linha_atual];  
+    assign colunas = ~estado_leds[linha_atual];  
 
 endmodule
