@@ -17,7 +17,8 @@ module matriz_leds (
 );
 
     reg [7:0] estado_leds [7:0]; // Matriz virtual para armazenar estado das LEDs
-    reg [7:0] linha_atual; // Variável para escanear as linhas
+    reg [7:0] linha_atual;       // Variável para escanear as linhas
+    reg [2:0] indice;
     integer i, j;
 
     initial begin
@@ -150,35 +151,50 @@ module matriz_leds (
                 if (linha_atual < 8'b00000001)
                     linha_atual <= linha_atual << 1;
                 else
-                    linha_atual <= 8'b00000000;
+                    linha_atual <= 8'b00000001;
             end
             3'b001: begin
                 if (linha_atual < 8'b00000100)
                     linha_atual <= linha_atual << 1;
                 else
-                    linha_atual <= 8'b00000000;
+                    linha_atual <= 8'b00000001;
             end
             3'b010: begin
                 if (linha_atual < 8'b00010000)
                     linha_atual <= linha_atual << 1;
                 else
-                    linha_atual <= 8'b00000000;
+                    linha_atual <= 8'b00000001;
             end
             3'b011: begin
                 if (linha_atual < 8'b01000000)
                     linha_atual <= linha_atual << 1;
                 else
-                    linha_atual <= 8'b00000000;
+                    linha_atual <= 8'b00000001;
             end
             3'b100: begin
                 if (linha_atual < 8'b10000000)
                     linha_atual <= linha_atual << 1;
                 else
-                    linha_atual <= 8'b00000000;
+                    linha_atual <= 8'b00000001;
             end
             default: begin
-                    linha_atual <= 8'b00000000;
+                    linha_atual <= 8'b00000001;
             end
+        endcase
+    end
+
+    always @(*) begin
+        indice = 3'b000; // Inicializa
+        casez (linha_atual)
+            8'b00000001: indice = 3'b000;
+            8'b00000010: indice = 3'b001;
+            8'b00000100: indice = 3'b010;
+            8'b00001000: indice = 3'b011;
+            8'b00010000: indice = 3'b100;
+            8'b00100000: indice = 3'b101;
+            8'b01000000: indice = 3'b110;
+            8'b10000000: indice = 3'b111;
+            default: indice = 3'b000; // Caso inesperado
         endcase
     end
 
@@ -187,6 +203,6 @@ module matriz_leds (
     
 
     // Colunas recebem valores da linha ativa
-    assign colunas = ~estado_leds[linha_atual];  
+    assign colunas = ~estado_leds[indice];  
 
 endmodule

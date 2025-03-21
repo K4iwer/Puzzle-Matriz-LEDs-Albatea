@@ -529,22 +529,6 @@ endmodule
     nas colunas. 
 
 
-    */
-
-/*
-    Este módulo é o controlador de uma matriz de leds. Ele trata as linhas da matriz como terra e as 
-    colunas como fase, logo, para ativar algo na linha 5, ele faz linhas = 01111 e ativa o que quiser
-    nas colunas. 
-
-
-*/
-
-/*
-    Este módulo é o controlador de uma matriz de leds. Ele trata as linhas da matriz como terra e as 
-    colunas como fase, logo, para ativar algo na linha 5, ele faz linhas = 01111 e ativa o que quiser
-    nas colunas. 
-
-
 */
 
 module matriz_leds (
@@ -558,7 +542,8 @@ module matriz_leds (
 );
 
     reg [7:0] estado_leds [7:0]; // Matriz virtual para armazenar estado das LEDs
-    reg [7:0] linha_atual; // Variável para escanear as linhas
+    reg [7:0] linha_atual;       // Variável para escanear as linhas
+    reg [2:0] indice;
     integer i, j;
 
     initial begin
@@ -691,35 +676,50 @@ module matriz_leds (
                 if (linha_atual &lt; 8&apos;b00000001)
                     linha_atual &lt;= linha_atual &lt;&lt; 1;
                 else
-                    linha_atual &lt;= 8&apos;b00000000;
+                    linha_atual &lt;= 8&apos;b00000001;
             end
             3&apos;b001: begin
                 if (linha_atual &lt; 8&apos;b00000100)
                     linha_atual &lt;= linha_atual &lt;&lt; 1;
                 else
-                    linha_atual &lt;= 8&apos;b00000000;
+                    linha_atual &lt;= 8&apos;b00000001;
             end
             3&apos;b010: begin
                 if (linha_atual &lt; 8&apos;b00010000)
                     linha_atual &lt;= linha_atual &lt;&lt; 1;
                 else
-                    linha_atual &lt;= 8&apos;b00000000;
+                    linha_atual &lt;= 8&apos;b00000001;
             end
             3&apos;b011: begin
                 if (linha_atual &lt; 8&apos;b01000000)
                     linha_atual &lt;= linha_atual &lt;&lt; 1;
                 else
-                    linha_atual &lt;= 8&apos;b00000000;
+                    linha_atual &lt;= 8&apos;b00000001;
             end
             3&apos;b100: begin
                 if (linha_atual &lt; 8&apos;b10000000)
                     linha_atual &lt;= linha_atual &lt;&lt; 1;
                 else
-                    linha_atual &lt;= 8&apos;b00000000;
+                    linha_atual &lt;= 8&apos;b00000001;
             end
             default: begin
-                    linha_atual &lt;= 8&apos;b00000000;
+                    linha_atual &lt;= 8&apos;b00000001;
             end
+        endcase
+    end
+
+    always @(*) begin
+        indice = 3&apos;b000; // Inicializa
+        casez (linha_atual)
+            8&apos;b00000001: indice = 3&apos;b000;
+            8&apos;b00000010: indice = 3&apos;b001;
+            8&apos;b00000100: indice = 3&apos;b010;
+            8&apos;b00001000: indice = 3&apos;b011;
+            8&apos;b00010000: indice = 3&apos;b100;
+            8&apos;b00100000: indice = 3&apos;b101;
+            8&apos;b01000000: indice = 3&apos;b110;
+            8&apos;b10000000: indice = 3&apos;b111;
+            default: indice = 3&apos;b000; // Caso inesperado
         endcase
     end
 
@@ -728,9 +728,11 @@ module matriz_leds (
     
 
     // Colunas recebem valores da linha ativa
-    assign colunas = ~estado_leds[linha_atual];  
+    assign colunas = ~estado_leds[indice];  
 
 endmodule
+
+
 
 module hexa7seg_mod (hexa, display);
     input      [4:0] hexa;
@@ -840,7 +842,7 @@ endmodule</string>
         </entry>
         <entry>
           <string>Frequency</string>
-          <int>5000</int>
+          <int>10</int>
         </entry>
       </elementAttributes>
       <pos x="380" y="40"/>
@@ -1675,6 +1677,34 @@ endmodule</string>
       </elementAttributes>
       <pos x="1680" y="1000"/>
     </visualElement>
+    <visualElement>
+      <elementName>Out</elementName>
+      <elementAttributes>
+        <entry>
+          <string>Label</string>
+          <string>linha</string>
+        </entry>
+        <entry>
+          <string>Bits</string>
+          <int>8</int>
+        </entry>
+      </elementAttributes>
+      <pos x="1280" y="260"/>
+    </visualElement>
+    <visualElement>
+      <elementName>Out</elementName>
+      <elementAttributes>
+        <entry>
+          <string>Label</string>
+          <string>coluna</string>
+        </entry>
+        <entry>
+          <string>Bits</string>
+          <int>8</int>
+        </entry>
+      </elementAttributes>
+      <pos x="1280" y="80"/>
+    </visualElement>
   </visualElements>
   <wires>
     <wire>
@@ -1736,6 +1766,10 @@ endmodule</string>
     <wire>
       <p1 x="1440" y="260"/>
       <p2 x="1540" y="260"/>
+    </wire>
+    <wire>
+      <p1 x="1240" y="260"/>
+      <p2 x="1280" y="260"/>
     </wire>
     <wire>
       <p1 x="1500" y="900"/>
@@ -1910,6 +1944,10 @@ endmodule</string>
       <p2 x="2280" y="80"/>
     </wire>
     <wire>
+      <p1 x="1240" y="80"/>
+      <p2 x="1280" y="80"/>
+    </wire>
+    <wire>
       <p1 x="1520" y="-20"/>
       <p2 x="1960" y="-20"/>
     </wire>
@@ -2051,11 +2089,15 @@ endmodule</string>
     </wire>
     <wire>
       <p1 x="960" y="160"/>
-      <p2 x="1420" y="160"/>
+      <p2 x="1240" y="160"/>
     </wire>
     <wire>
       <p1 x="1440" y="160"/>
       <p2 x="1600" y="160"/>
+    </wire>
+    <wire>
+      <p1 x="1240" y="160"/>
+      <p2 x="1420" y="160"/>
     </wire>
     <wire>
       <p1 x="1680" y="800"/>
@@ -2287,7 +2329,7 @@ endmodule</string>
     </wire>
     <wire>
       <p1 x="960" y="180"/>
-      <p2 x="1420" y="180"/>
+      <p2 x="1240" y="180"/>
     </wire>
     <wire>
       <p1 x="1440" y="180"/>
@@ -2304,6 +2346,10 @@ endmodule</string>
     <wire>
       <p1 x="2080" y="180"/>
       <p2 x="2160" y="180"/>
+    </wire>
+    <wire>
+      <p1 x="1240" y="180"/>
+      <p2 x="1420" y="180"/>
     </wire>
     <wire>
       <p1 x="2000" y="180"/>
@@ -2720,6 +2766,14 @@ endmodule</string>
     <wire>
       <p1 x="1560" y="240"/>
       <p2 x="1560" y="540"/>
+    </wire>
+    <wire>
+      <p1 x="1240" y="80"/>
+      <p2 x="1240" y="160"/>
+    </wire>
+    <wire>
+      <p1 x="1240" y="180"/>
+      <p2 x="1240" y="260"/>
     </wire>
     <wire>
       <p1 x="1500" y="-40"/>
