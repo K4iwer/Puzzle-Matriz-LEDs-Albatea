@@ -26,6 +26,8 @@ module fluxo_dados (
   // sinais internos para interligacao dos componentes
   wire [2:0] s_nivel;
   wire [7:0] s_botoes;
+  wire s_sinal;
+  wire s_reg_enable;
 
   // contador_163 nivel
   contador_163 contador_nivel (
@@ -63,21 +65,32 @@ module fluxo_dados (
   );
 
   // edge detector global
-  edge_detector_global edging (
+  edge_detector_global edging_geral (
     .clock         ( clock ),
     .reset         ( zeraM ),
     .botoes        ( botoes ),
     .edge_detected ( s_botoes )
   );
 
+  // edge detector
+  edge_detector edging (
+    .clock( clock ),
+    .reset( zeraM ),
+    .sinal( s_sinal ),
+    .pulso( s_reg_enable )
+  );
+
   // registrador do db_botões
   registrador_8 reg_botoes (
     .clock         ( clock ),
     .clear         ( zeraM ),
-    .enable        ( 1'b1  ),
+    .enable        ( s_reg_enable  ),
     .D             ( botoes ),
     .Q             ( db_botoes )
   );
+
+  // entrada edger
+  assign s_sinal = |botoes;
 
   // saida de depuracao
   assign db_nivel  = s_nivel;
