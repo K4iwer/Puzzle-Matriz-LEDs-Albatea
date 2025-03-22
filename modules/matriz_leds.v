@@ -13,12 +13,13 @@ module matriz_leds (
     input [2:0] nivel,      // Nivel atual do jogador
     output reg nivel_concluido, // Output que avisa a UC se venceu
     output [7:0] colunas,   // Sinais para as colunas da matriz de LEDs
-    output [7:0] linhas     // Sinais para ativar linhas da matriz
+    output [7:0] linhas,    // Sinais para ativar linhas da matriz
+    output [2:0] indice     // Sinais para indice dos vetores 
 );
 
     reg [7:0] estado_leds [7:0]; // Matriz virtual para armazenar estado das LEDs
     reg [7:0] linha_atual;       // Variável para escanear as linhas
-    reg [2:0] indice;
+    reg [2:0] s_indice;
     integer i, j;
 
     initial begin
@@ -184,25 +185,27 @@ module matriz_leds (
     end
 
     always @(*) begin
-        indice = 3'b000; // Inicializa
+        s_indice = 3'b000; // Inicializa
         casez (linha_atual)
-            8'b00000001: indice = 3'b000;
-            8'b00000010: indice = 3'b001;
-            8'b00000100: indice = 3'b010;
-            8'b00001000: indice = 3'b011;
-            8'b00010000: indice = 3'b100;
-            8'b00100000: indice = 3'b101;
-            8'b01000000: indice = 3'b110;
-            8'b10000000: indice = 3'b111;
-            default: indice = 3'b000; // Caso inesperado
+            8'b00000001: s_indice = 3'b000;
+            8'b00000010: s_indice = 3'b001;
+            8'b00000100: s_indice = 3'b010;
+            8'b00001000: s_indice = 3'b011;
+            8'b00010000: s_indice = 3'b100;
+            8'b00100000: s_indice = 3'b101;
+            8'b01000000: s_indice = 3'b110;
+            8'b10000000: s_indice = 3'b111;
+            default: s_indice = 3'b000; // Caso inesperado
         endcase
     end
 
     // Ativação da linha atual (apenas uma linha por vez)
     assign linhas = linha_atual;
     
-
     // Colunas recebem valores da linha ativa
-    assign colunas = ~estado_leds[indice];  
+    assign colunas = ~estado_leds[s_indice];  
+
+    // Envia o indice da linha
+    assign indice = s_indice;
 
 endmodule

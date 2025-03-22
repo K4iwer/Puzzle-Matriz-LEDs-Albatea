@@ -38,7 +38,8 @@ module jogo_desafio_memoria (
     output ganhou,
     output [6:0] db_estado,
     output [6:0] db_nivel,
-    output [6:0] db_botoes
+    output [6:0] db_botoes,
+    output [4:0] estados
 );
 
     // Sinais internos para interligacao dos componentes
@@ -48,6 +49,14 @@ module jogo_desafio_memoria (
     wire s_contaN;
     wire s_zeraN;
     wire s_zeraM;
+    wire s_contaT;
+    wire s_zeraT;
+    wire s_contaP;
+    wire s_zeraP;
+    wire s_ganhou;
+    wire s_passou_nivel;
+    wire s_fimT;
+    wire s_fimP;
     wire [4:0] s_estado;
     wire [2:0] s_nivel;
     wire [7:0] s_botoes;
@@ -57,12 +66,19 @@ module jogo_desafio_memoria (
         .clock                        ( clock ),    
         .reset                        ( reset ),
         .iniciar                      ( jogar ),
+        .fimT                         ( s_fimT ),
+        .fimP                         ( s_fimP ),
         .nivel_concluido              ( s_nivel_concluido ),
         .nivelIgualUltimoNivel        ( s_nivelIgualUltimoNivel ),
         .nivelMenorOuIgualUltimoNivel ( s_nivelMenorOuIgualUltimoNivel ),
-        .ganhou                       ( ganhou ),
+        .ganhou                       ( s_ganhou ),
+        .passou_nivel                 ( s_passou_nivel ),
         .contaN                       ( s_contaN ),
         .zeraN                        ( s_zeraN ),
+        .contaT                       ( s_contaT ),
+        .zeraT                        ( s_zeraT ), 
+        .contaP                       ( s_contaP ),
+        .zeraP                        ( s_zeraP ), 
         .zeraM                        ( s_zeraM ),
         .db_estado                    ( s_estado )
     );
@@ -71,9 +87,17 @@ module jogo_desafio_memoria (
     fluxo_dados fluxo_dados (
         .clock                        ( clock ),        
         .contaN                       ( s_contaN ),  
-        .zeraN                        ( s_zeraN ),   
+        .zeraN                        ( s_zeraN ), 
+        .contaT                       ( s_contaT ),
+        .zeraT                        ( s_zeraT ), 
+        .contaP                       ( s_contaP ),
+        .zeraP                        ( s_zeraP ),   
         .zeraM                        ( s_zeraM ),   
+        .ganhou                       ( s_ganhou ),
+        .passou_nivel                 ( s_passou_nivel ),
         .botoes                       ( botoes ),
+        .fimT                         ( s_fimT ),
+        .fimP                         ( s_fimP ),
         .nivel_concluido              ( s_nivel_concluido ),
         .colunas                      ( colunas ),
         .linhas                       ( linhas ),
@@ -101,6 +125,10 @@ module jogo_desafio_memoria (
         .display ( db_estado )
     );
 
+    // Saida depuração
+    assign ganhou = s_ganhou;
+    assign estados = s_estado;
+
 endmodule
 
 /*
@@ -116,9 +144,17 @@ endmodule
 module fluxo_dados (
   input  clock,
   input  contaN,  
-  input  zeraN,   
-  input  zeraM,   
+  input  zeraN, 
+  input  contaT,
+  input  zeraT, 
+  input  contaP,
+  input  zeraP,   
+  input  zeraM, 
+  input  ganhou,
+  input  passou_nivel,
   input  [7:0] botoes,
+  output fimT,
+  output fimP,
   output nivel_concluido,
   output [7:0] colunas,
   output [7:0] linhas,
@@ -131,6 +167,11 @@ module fluxo_dados (
   // sinais internos para interligacao dos componentes
   wire [2:0] s_nivel;
   wire [7:0] s_botoes;
+  wire [2:0] s_indice;
+  wire [7:0] s_col_reg;
+  wire [7:0] s_col_mat;
+  wire s_sinal;
+  wire s_reg_enable;
 
   // contador_163 nivel
   contador_163 contador_nivel (
@@ -151,8 +192,9 @@ module fluxo_dados (
     .botoes          ( s_botoes ),     
     .nivel           ( s_nivel ),      
     .nivel_concluido ( nivel_concluido ), 
-    .colunas         ( colunas ),   
-    .linhas          ( linhas )     
+    .colunas         ( s_col_mat ),   
+    .linhas          ( linhas ),
+    .indice          ( s_indice )   
   );
 
   // comparador_85 nivel
@@ -168,21 +210,67 @@ module fluxo_dados (
   );
 
   // edge detector global
-  edge_detector_global edging (
+  edge_detector_global edging_geral (
     .clock         ( clock ),
     .reset         ( zeraM ),
     .botoes        ( botoes ),
     .edge_detected ( s_botoes )
   );
 
+  // edge detector
+  edge_detector edging (
+    .clock( clock ),
+    .reset( zeraM ),
+    .sinal( s_sinal ),
+    .pulso( s_reg_enable )
+  );
+
   // registrador do db_botões
   registrador_8 reg_botoes (
     .clock         ( clock ),
     .clear         ( zeraM ),
-    .enable        ( 1&apos;b1  ),
+    .enable        ( s_reg_enable ),
     .D             ( botoes ),
     .Q             ( db_botoes )
   );
+
+  // registrador para o desenho de vitória e todos acesos
+  reg_8x8 reg_desenho (
+    .clock       ( clock ),
+    .reset       ( zeraM ),
+    .indice      ( s_indice ),
+    .vitoria     ( ganhou ),
+    .coluna_sel  ( s_col_reg )
+  );
+
+  // timer da piscagem
+  contador_m #(500, 9) timer_piscagem (             
+    .clock   ( clock ),
+    .zera_as ( 1&apos;b0 ),
+    .zera_s  ( zeraT ),
+    .conta   ( contaT ),
+    .Q       (  ), 
+    .fim     ( fimT ),
+    .meio    (  )
+  );
+
+  // contador da piscagem
+  contador_m #(3, 2) contador_piscagem ( 
+    .clock   ( clock ),
+    .zera_as ( 1&apos;b0 ),
+    .zera_s  ( zeraP ),
+    .conta   ( contaP ), 
+    .Q       (  ),
+    .fim     ( fimP ),
+    .meio    (  )
+  );
+
+
+  // entrada edger
+  assign s_sinal = |botoes;
+
+  // saida da coluna
+  assign colunas = passou_nivel ? s_col_reg : s_col_mat;
 
   // saida de depuracao
   assign db_nivel  = s_nivel;
@@ -204,31 +292,23 @@ endmodule
 //     12/01/2025  1.1     Edson Midorikawa  revisao
 //------------------------------------------------------------------
 //
-//------------------------------------------------------------------
-// Arquivo   : exp3_unidade_controle_desafio.v
-// Projeto   : Experiencia 3 - Projeto de uma Unidade de Controle
-//------------------------------------------------------------------
-// Descricao : Unidade de controle
-//
-// usar este codigo como template (modelo) para codificar 
-// máquinas de estado de unidades de controle            
-//------------------------------------------------------------------
-// Revisoes  :
-//     Data        Versao  Autor             Descricao
-//     14/01/2024  1.0     Edson Midorikawa  versao inicial
-//     12/01/2025  1.1     Edson Midorikawa  revisao
-//------------------------------------------------------------------
-//
 module unidade_controle (
     input clock,
     input reset,
     input iniciar,
+    input fimT,
+    input fimP,
     input nivel_concluido,
     input nivelIgualUltimoNivel,
     input nivelMenorOuIgualUltimoNivel,
     output reg ganhou,
+    output reg passou_nivel,
+    output reg zeraT,
+    output reg contaT,
     output reg contaN,
     output reg zeraN,
+    output reg contaP,
+    output reg zeraP,
     output reg zeraM,
     output reg [4:0] db_estado
 );
@@ -238,11 +318,15 @@ module unidade_controle (
     parameter preparacao         = 5&apos;b00001;  // 1
     parameter inic_nivel         = 5&apos;b00010;  // 2
     parameter jogando            = 5&apos;b00011;  // 3
-    parameter checa_ultimo_nivel = 5&apos;b00100;  // 4
-    parameter proximo_nivel      = 5&apos;b00101;  // 5
-    parameter estabiliza_matriz  = 5&apos;b00110;  // 6
-    parameter estabiliza_matriz1 = 5&apos;b00111;  // 7
-    parameter est_ganhou         = 5&apos;b01000;  // 8 
+    parameter inic_apagado       = 5&apos;b00100;  // 4
+    parameter mostra_apagado     = 5&apos;b00101;  // 5 
+    parameter inic_aceso         = 5&apos;b00110;  // 6
+    parameter mostra_aceso       = 5&apos;b00111;  // 7
+    parameter proxima_piscagem   = 5&apos;b01000;  // 8
+    parameter fim_animacao       = 5&apos;b01001;  // 9
+    parameter checa_ultimo_nivel = 5&apos;b01010;  // 10
+    parameter proximo_nivel      = 5&apos;b01011;  // 11
+    parameter est_ganhou         = 5&apos;b01100;  // 12 
 
 
     // Variaveis de estado
@@ -262,16 +346,28 @@ module unidade_controle (
             inicial:            Eprox = iniciar ? preparacao : inicial;
             preparacao:         Eprox = inic_nivel;
             inic_nivel:         Eprox = jogando;
-            jogando:            Eprox = nivel_concluido ? checa_ultimo_nivel : jogando;
+            jogando:            Eprox = nivel_concluido ? inic_apagado : jogando;
+            inic_apagado:       Eprox = mostra_apagado;
+            mostra_apagado:     Eprox = fimT ? inic_aceso : mostra_apagado;
+            inic_aceso:         Eprox = mostra_aceso;
+            mostra_aceso:
+            begin 
+                if (fimT &amp;&amp; fimP)
+                    Eprox = fim_animacao;
+                else if (fimT &amp;&amp; !fimP)
+                    Eprox = proxima_piscagem;
+                else
+                    Eprox = mostra_aceso;
+            end
+            proxima_piscagem:   Eprox = inic_apagado;
+            fim_animacao:       Eprox = checa_ultimo_nivel;
             checa_ultimo_nivel: 
             begin 
                 if (nivelIgualUltimoNivel)
                     Eprox =  est_ganhou;
                 else 
-                    Eprox = estabiliza_matriz;
+                    Eprox = proximo_nivel;
             end
-            estabiliza_matriz:  Eprox = estabiliza_matriz1;
-            estabiliza_matriz1: Eprox = proximo_nivel;
             proximo_nivel:      Eprox = inic_nivel;
             est_ganhou:         Eprox = iniciar ? preparacao : est_ganhou;
             default:            Eprox = inicial;
@@ -283,8 +379,13 @@ module unidade_controle (
         // Inicializa todas as saídas com valores padrão
         contaN       = 1&apos;b0;
         zeraN        = 1&apos;b0;
+        contaP       = 1&apos;b0;
+        zeraP        = 1&apos;b0;
+        contaT       = 1&apos;b0;
+        zeraT        = 1&apos;b0;
         zeraM        = 1&apos;b0;
         ganhou       = 1&apos;b0;
+        passou_nivel = 1&apos;b0;
 
         // Define sinais de controle
         case (Eatual)
@@ -296,18 +397,52 @@ module unidade_controle (
             preparacao: begin
                 zeraN = 1&apos;b1;
                 zeraM = 1&apos;b1;
+                zeraP = 1&apos;b1;
+                zeraT = 1&apos;b1;
             end
 
             inic_nivel: begin
                 zeraM = 1&apos;b1;
             end
 
+            inic_apagado: begin
+                zeraT        = 1&apos;b1;
+                passou_nivel = 1&apos;b0;
+                zeraM        = 1&apos;b1;
+            end
+
+            mostra_apagado: begin
+                contaT = 1&apos;b1;
+                passou_nivel = 1&apos;b0;
+            end
+
+            inic_aceso: begin
+                zeraT        = 1&apos;b1;
+                passou_nivel = 1&apos;b1;
+                zeraM        = 1&apos;b1;       
+            end
+
+            mostra_aceso: begin
+                contaT       = 1&apos;b1;
+                passou_nivel = 1&apos;b1;
+            end
+
+            proxima_piscagem: begin
+                contaP = 1&apos;b1;
+            end
+
+            fim_animacao: begin
+                zeraP = 1&apos;b1;
+            end
+
             proximo_nivel: begin
-                contaN = 1&apos;b1;
+                contaN       = 1&apos;b1;
+                passou_nivel = 1&apos;b0;
             end
 
             est_ganhou: begin
-                ganhou = 1&apos;b1;
+                ganhou       = 1&apos;b1;
+                passou_nivel = 1&apos;b1;
             end
 
             default: begin
@@ -318,21 +453,23 @@ module unidade_controle (
         // Saida de depuracao (estado)
         case (Eatual)
             inicial:            db_estado = 5&apos;b00000;  // 0 
-            preparacao:         db_estado = 5&apos;b00001;  // 1
-            inic_nivel:         db_estado = 5&apos;b00010;  // 2
-            jogando:            db_estado = 5&apos;b00011;  // 3
-            checa_ultimo_nivel: db_estado = 5&apos;b00100;  // 4
-            proximo_nivel:      db_estado = 5&apos;b00101;  // 5
-            estabiliza_matriz:  db_estado = 5&apos;b00110;  // 6
-            estabiliza_matriz1: db_estado = 5&apos;b00111;  // 7
-            est_ganhou:         db_estado = 5&apos;b01000;  // 8 
+            preparacao:         db_estado = 5&apos;b00001;  // 1 
+            inic_nivel:         db_estado = 5&apos;b00010;  // 2 
+            jogando:            db_estado = 5&apos;b00011;  // 3 
+            inic_apagado:       db_estado = 5&apos;b00100;  // 4 
+            mostra_apagado:     db_estado = 5&apos;b00101;  // 5 
+            inic_aceso:         db_estado = 5&apos;b00110;  // 6 
+            mostra_aceso:       db_estado = 5&apos;b00111;  // 7 
+            proxima_piscagem:   db_estado = 5&apos;b01000;  // 8 
+            fim_animacao:       db_estado = 5&apos;b01001;  // 9 
+            checa_ultimo_nivel: db_estado = 5&apos;b01010;  // 10
+            proximo_nivel:      db_estado = 5&apos;b01011;  // 11
+            est_ganhou:         db_estado = 5&apos;b01100;  // 12  
             default:            db_estado = 5&apos;b11111;  // E (erro)
         endcase
     end
 
 endmodule
-
-
 
 
 /* ----------------------------------------------------------------
@@ -538,12 +675,13 @@ module matriz_leds (
     input [2:0] nivel,      // Nivel atual do jogador
     output reg nivel_concluido, // Output que avisa a UC se venceu
     output [7:0] colunas,   // Sinais para as colunas da matriz de LEDs
-    output [7:0] linhas     // Sinais para ativar linhas da matriz
+    output [7:0] linhas,    // Sinais para ativar linhas da matriz
+    output [2:0] indice     // Sinais para indice dos vetores 
 );
 
     reg [7:0] estado_leds [7:0]; // Matriz virtual para armazenar estado das LEDs
     reg [7:0] linha_atual;       // Variável para escanear as linhas
-    reg [2:0] indice;
+    reg [2:0] s_indice;
     integer i, j;
 
     initial begin
@@ -709,26 +847,28 @@ module matriz_leds (
     end
 
     always @(*) begin
-        indice = 3&apos;b000; // Inicializa
+        s_indice = 3&apos;b000; // Inicializa
         casez (linha_atual)
-            8&apos;b00000001: indice = 3&apos;b000;
-            8&apos;b00000010: indice = 3&apos;b001;
-            8&apos;b00000100: indice = 3&apos;b010;
-            8&apos;b00001000: indice = 3&apos;b011;
-            8&apos;b00010000: indice = 3&apos;b100;
-            8&apos;b00100000: indice = 3&apos;b101;
-            8&apos;b01000000: indice = 3&apos;b110;
-            8&apos;b10000000: indice = 3&apos;b111;
-            default: indice = 3&apos;b000; // Caso inesperado
+            8&apos;b00000001: s_indice = 3&apos;b000;
+            8&apos;b00000010: s_indice = 3&apos;b001;
+            8&apos;b00000100: s_indice = 3&apos;b010;
+            8&apos;b00001000: s_indice = 3&apos;b011;
+            8&apos;b00010000: s_indice = 3&apos;b100;
+            8&apos;b00100000: s_indice = 3&apos;b101;
+            8&apos;b01000000: s_indice = 3&apos;b110;
+            8&apos;b10000000: s_indice = 3&apos;b111;
+            default: s_indice = 3&apos;b000; // Caso inesperado
         endcase
     end
 
     // Ativação da linha atual (apenas uma linha por vez)
     assign linhas = linha_atual;
     
-
     // Colunas recebem valores da linha ativa
-    assign colunas = ~estado_leds[indice];  
+    assign colunas = ~estado_leds[s_indice];  
+
+    // Envia o indice da linha
+    assign indice = s_indice;
 
 endmodule
 
@@ -820,11 +960,156 @@ module registrador_8 (
 
     assign Q = IQ;
 
+endmodule
+
+/* ------------------------------------------------------------------------
+ *  Arquivo   : edge_detector.v
+ *  Projeto   : Experiencia 4 - Desenvolvimento de Projeto de
+ *                              Circuitos Digitais com FPGA
+ * ------------------------------------------------------------------------
+ *  Descricao : detector de borda
+ *              gera um pulso na saida de 1 periodo de clock
+ *              a partir da detecao da borda de subida sa entrada
+ * 
+ *              sinal de reset ativo em alto
+ * 
+ *              &gt; codigo adaptado a partir de codigo VHDL disponivel em
+ *                https://surf-vhdl.com/how-to-design-a-good-edge-detector/
+ * ------------------------------------------------------------------------
+ *  Revisoes  :
+ *      Data        Versao  Autor             Descricao
+ *      26/01/2024  1.0     Edson Midorikawa  versao inicial
+ * ------------------------------------------------------------------------
+ */
+ 
+module edge_detector (
+    input  clock,
+    input  reset,
+    input  sinal,
+    output pulso
+);
+
+    reg reg0;
+    reg reg1;
+
+    always @(posedge clock or posedge reset) begin
+        if (reset) begin
+            reg0 &lt;= 1&apos;b0;
+            reg1 &lt;= 1&apos;b0;
+        end else if (clock) begin
+            reg0 &lt;= sinal;
+            reg1 &lt;= reg0;
+        end
+    end
+
+    assign pulso = ~reg1 &amp; reg0;
+
+endmodule
+
+
+//------------------------------------------------------------------
+// Arquivo   : reg_8x8
+// Projeto   : Jogo matriz de leds
+//------------------------------------------------------------------
+// Função    : Armazenar o desenho de vitória e 
+//             mostrar todas as leds acesas para 
+//             permitir a animação de passar de 
+//             nivel
+//
+module reg_8x8 (clock, reset, indice, vitoria, coluna_sel);
+    input        clock;
+    input        reset;
+    input  [2:0] indice;
+    input        vitoria;
+    output reg [7:0] coluna_sel;
+
+    // Registrador para guardar desenho
+    reg [7:0] desenho_vitoria [0:7]; // 8 linhas de 8 bits (desenho fixo)
+
+    always @(posedge reset) begin
+        desenho_vitoria[0] &lt;= 8&apos;b00011000;
+        desenho_vitoria[1] &lt;= 8&apos;b00011000;
+        desenho_vitoria[2] &lt;= 8&apos;b00100100;
+        desenho_vitoria[3] &lt;= 8&apos;b00100100;
+        desenho_vitoria[4] &lt;= 8&apos;b01000010;
+        desenho_vitoria[5] &lt;= 8&apos;b01000010;
+        desenho_vitoria[6] &lt;= 8&apos;b10000001;
+        desenho_vitoria[7] &lt;= 8&apos;b10000001;
+    end
+
+    // Seleciona qual padrão será mostrado
+    always @(posedge clock or posedge reset) begin
+        if (reset) begin
+            coluna_sel &lt;= 8&apos;b00000000;
+        end else if (vitoria) begin
+            coluna_sel &lt;= desenho_vitoria[indice]; // Seleciona a linha do desenho
+        end else begin
+            coluna_sel &lt;= 8&apos;b00000000; // Todas as colunas acesas
+        end
+    end
+
+endmodule
+
+
+/*---------------Laboratorio Digital-------------------------------------
+ * Arquivo   : contador_m.v
+ * Projeto   : Experiencia 4 - Desenvolvimento de Projeto de 
+ *                             Circuitos Digitais em FPGA
+ *-----------------------------------------------------------------------
+ * Descricao : contador binario, modulo m, com parametros 
+ *             M (modulo do contador) e N (numero de bits),
+ *             sinais para clear assincrono (zera_as) e sincrono (zera_s)
+ *             e saidas de fim e meio de contagem
+ *             
+ *-----------------------------------------------------------------------
+ * Revisoes  :
+ *     Data        Versao  Autor             Descricao
+ *     30/01/2024  1.0     Edson Midorikawa  criacao
+ *     16/01/2025  1.1     Edson Midorikawa  revisao
+ *-----------------------------------------------------------------------
+ */
+
+module contador_m #(parameter M=100, N=7)
+  (
+   input  wire          clock,
+   input  wire          zera_as,
+   input  wire          zera_s,
+   input  wire          conta,
+   output reg  [N-1:0]  Q,
+   output reg           fim,
+   output reg           meio
+  );
+
+  always @(posedge clock or posedge zera_as) begin
+    if (zera_as) begin
+      Q &lt;= 0;
+    end else if (clock) begin
+      if (zera_s) begin
+        Q &lt;= 0;
+      end else if (conta) begin
+        if (Q == M-1) begin
+          Q &lt;= 0;
+        end else begin
+          Q &lt;= Q + 1&apos;b1;
+        end
+      end
+    end
+  end
+
+  // Saidas
+  always @ (Q)
+      if (Q == M-1)   fim = 1;
+      else            fim = 0;
+
+  always @ (Q)
+      if (Q == M/2-1) meio = 1;
+      else            meio = 0;
+
 endmodule</string>
         </entry>
         <entry>
           <string>externalOutputs</string>
-          <string>colunas:8,linhas:8,ganhou,db_estado:7,db_nivel:7,db_botoes:7</string>
+          <string>colunas:8,linhas:8,ganhou,db_estado:7,db_nivel:7,db_botoes:7,estados:5</string>
         </entry>
       </elementAttributes>
       <pos x="600" y="160"/>
@@ -842,7 +1127,7 @@ endmodule</string>
         </entry>
         <entry>
           <string>Frequency</string>
-          <int>10</int>
+          <int>500</int>
         </entry>
       </elementAttributes>
       <pos x="380" y="40"/>
@@ -965,7 +1250,7 @@ endmodule</string>
           <string>Ganhou</string>
         </entry>
       </elementAttributes>
-      <pos x="1200" y="460"/>
+      <pos x="1200" y="440"/>
     </visualElement>
     <visualElement>
       <elementName>Out</elementName>
@@ -977,6 +1262,10 @@ endmodule</string>
         <entry>
           <string>Bits</string>
           <int>7</int>
+        </entry>
+        <entry>
+          <string>intFormat</string>
+          <intFormat>bin</intFormat>
         </entry>
       </elementAttributes>
       <pos x="1200" y="500"/>
@@ -1705,6 +1994,20 @@ endmodule</string>
       </elementAttributes>
       <pos x="1280" y="80"/>
     </visualElement>
+    <visualElement>
+      <elementName>Out</elementName>
+      <elementAttributes>
+        <entry>
+          <string>Label</string>
+          <string>s_estado</string>
+        </entry>
+        <entry>
+          <string>Bits</string>
+          <int>5</int>
+        </entry>
+      </elementAttributes>
+      <pos x="1200" y="700"/>
+    </visualElement>
   </visualElements>
   <wires>
     <wire>
@@ -1854,10 +2157,6 @@ endmodule</string>
     <wire>
       <p1 x="280" y="460"/>
       <p2 x="480" y="460"/>
-    </wire>
-    <wire>
-      <p1 x="1100" y="460"/>
-      <p2 x="1200" y="460"/>
     </wire>
     <wire>
       <p1 x="460" y="140"/>
@@ -2368,6 +2667,10 @@ endmodule</string>
       <p2 x="1840" y="180"/>
     </wire>
     <wire>
+      <p1 x="1100" y="440"/>
+      <p2 x="1200" y="440"/>
+    </wire>
+    <wire>
       <p1 x="1680" y="440"/>
       <p2 x="1720" y="440"/>
     </wire>
@@ -2452,6 +2755,10 @@ endmodule</string>
       <p2 x="440" y="380"/>
     </wire>
     <wire>
+      <p1 x="960" y="700"/>
+      <p2 x="1200" y="700"/>
+    </wire>
+    <wire>
       <p1 x="1600" y="200"/>
       <p2 x="1600" y="300"/>
     </wire>
@@ -2522,6 +2829,10 @@ endmodule</string>
     <wire>
       <p1 x="2240" y="1000"/>
       <p2 x="2240" y="1020"/>
+    </wire>
+    <wire>
+      <p1 x="960" y="280"/>
+      <p2 x="960" y="700"/>
     </wire>
     <wire>
       <p1 x="580" y="40"/>
@@ -2617,7 +2928,7 @@ endmodule</string>
     </wire>
     <wire>
       <p1 x="1100" y="200"/>
-      <p2 x="1100" y="460"/>
+      <p2 x="1100" y="440"/>
     </wire>
     <wire>
       <p1 x="1420" y="20"/>

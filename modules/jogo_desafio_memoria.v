@@ -22,6 +22,14 @@ module jogo_desafio_memoria (
     wire s_contaN;
     wire s_zeraN;
     wire s_zeraM;
+    wire s_contaT;
+    wire s_zeraT;
+    wire s_contaP;
+    wire s_zeraP;
+    wire s_ganhou;
+    wire s_passou_nivel;
+    wire s_fimT;
+    wire s_fimP;
     wire [4:0] s_estado;
     wire [2:0] s_nivel;
     wire [7:0] s_botoes;
@@ -31,12 +39,19 @@ module jogo_desafio_memoria (
         .clock                        ( clock ),    
         .reset                        ( reset ),
         .iniciar                      ( jogar ),
+        .fimT                         ( s_fimT ),
+        .fimP                         ( s_fimP ),
         .nivel_concluido              ( s_nivel_concluido ),
         .nivelIgualUltimoNivel        ( s_nivelIgualUltimoNivel ),
         .nivelMenorOuIgualUltimoNivel ( s_nivelMenorOuIgualUltimoNivel ),
-        .ganhou                       ( ganhou ),
+        .ganhou                       ( s_ganhou ),
+        .passou_nivel                 ( s_passou_nivel ),
         .contaN                       ( s_contaN ),
         .zeraN                        ( s_zeraN ),
+        .contaT                       ( s_contaT ),
+        .zeraT                        ( s_zeraT ), 
+        .contaP                       ( s_contaP ),
+        .zeraP                        ( s_zeraP ), 
         .zeraM                        ( s_zeraM ),
         .db_estado                    ( s_estado )
     );
@@ -45,9 +60,17 @@ module jogo_desafio_memoria (
     fluxo_dados fluxo_dados (
         .clock                        ( clock ),        
         .contaN                       ( s_contaN ),  
-        .zeraN                        ( s_zeraN ),   
+        .zeraN                        ( s_zeraN ), 
+        .contaT                       ( s_contaT ),
+        .zeraT                        ( s_zeraT ), 
+        .contaP                       ( s_contaP ),
+        .zeraP                        ( s_zeraP ),   
         .zeraM                        ( s_zeraM ),   
+        .ganhou                       ( s_ganhou ),
+        .passou_nivel                 ( s_passou_nivel ),
         .botoes                       ( botoes ),
+        .fimT                         ( s_fimT ),
+        .fimP                         ( s_fimP ),
         .nivel_concluido              ( s_nivel_concluido ),
         .colunas                      ( colunas ),
         .linhas                       ( linhas ),
@@ -74,5 +97,8 @@ module jogo_desafio_memoria (
         .hexa    ( s_estado ),
         .display ( db_estado )
     );
+
+    // Saida depuração
+    assign ganhou = s_ganhou;
 
 endmodule

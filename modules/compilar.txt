@@ -1,4 +1,6 @@
 sync_rom_16x4.v
+reg_8x8.v
+registrador_8.v
 registrador_4.v
 matriz_leds.v
 matriz_leds_dig.v

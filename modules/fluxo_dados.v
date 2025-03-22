@@ -11,9 +11,17 @@
 module fluxo_dados (
   input  clock,
   input  contaN,  
-  input  zeraN,   
-  input  zeraM,   
+  input  zeraN, 
+  input  contaT,
+  input  zeraT, 
+  input  contaP,
+  input  zeraP,   
+  input  zeraM, 
+  input  ganhou,
+  input  passou_nivel,
   input  [7:0] botoes,
+  output fimT,
+  output fimP,
   output nivel_concluido,
   output [7:0] colunas,
   output [7:0] linhas,
@@ -26,6 +34,9 @@ module fluxo_dados (
   // sinais internos para interligacao dos componentes
   wire [2:0] s_nivel;
   wire [7:0] s_botoes;
+  wire [2:0] s_indice;
+  wire [7:0] s_col_reg;
+  wire [7:0] s_col_mat;
   wire s_sinal;
   wire s_reg_enable;
 
@@ -48,8 +59,9 @@ module fluxo_dados (
     .botoes          ( s_botoes ),     
     .nivel           ( s_nivel ),      
     .nivel_concluido ( nivel_concluido ), 
-    .colunas         ( colunas ),   
-    .linhas          ( linhas )     
+    .colunas         ( s_col_mat ),   
+    .linhas          ( linhas ),
+    .indice          ( s_indice )   
   );
 
   // comparador_85 nivel
@@ -84,13 +96,48 @@ module fluxo_dados (
   registrador_8 reg_botoes (
     .clock         ( clock ),
     .clear         ( zeraM ),
-    .enable        ( s_reg_enable  ),
+    .enable        ( s_reg_enable ),
     .D             ( botoes ),
     .Q             ( db_botoes )
   );
 
+  // registrador para o desenho de vitória e todos acesos
+  reg_8x8 reg_desenho (
+    .clock       ( clock ),
+    .reset       ( zeraM ),
+    .indice      ( s_indice ),
+    .vitoria     ( ganhou ),
+    .coluna_sel  ( s_col_reg )
+  );
+
+  // timer da piscagem
+  contador_m #(500, 9) timer_piscagem (             
+    .clock   ( clock ),
+    .zera_as ( 1'b0 ),
+    .zera_s  ( zeraT ),
+    .conta   ( contaT ),
+    .Q       (  ), 
+    .fim     ( fimT ),
+    .meio    (  )
+  );
+
+  // contador da piscagem
+  contador_m #(3, 2) contador_piscagem ( 
+    .clock   ( clock ),
+    .zera_as ( 1'b0 ),
+    .zera_s  ( zeraP ),
+    .conta   ( contaP ), 
+    .Q       (  ),
+    .fim     ( fimP ),
+    .meio    (  )
+  );
+
+
   // entrada edger
   assign s_sinal = |botoes;
+
+  // saida da coluna
+  assign colunas = passou_nivel ? s_col_reg : s_col_mat;
 
   // saida de depuracao
   assign db_nivel  = s_nivel;
