@@ -17,6 +17,7 @@ module fluxo_dados (
   input  contaP,
   input  zeraP,   
   input  zeraM, 
+  input  rst_niv,
   input  ganhou,
   input  passou_nivel,
   input  [7:0] botoes,
@@ -32,6 +33,7 @@ module fluxo_dados (
 );
 
   // sinais internos para interligacao dos componentes
+  wire [7:0] balling;
   wire [2:0] s_nivel;
   wire [7:0] s_botoes;
   wire [2:0] s_indice;
@@ -55,7 +57,8 @@ module fluxo_dados (
   // Matriz de leds
   matriz_leds matriz (
     .clk             ( clock ),              
-    .rst             ( zeraM ),              
+    .rst             ( zeraM ), 
+    .rst_niv	      ( rst_niv ),
     .botoes          ( s_botoes ),     
     .nivel           ( s_nivel ),      
     .nivel_concluido ( nivel_concluido ), 
@@ -80,7 +83,7 @@ module fluxo_dados (
   edge_detector_global edging_geral (
     .clock         ( clock ),
     .reset         ( zeraM ),
-    .botoes        ( botoes ),
+    .botoes        ( balling ),
     .edge_detected ( s_botoes )
   );
 
@@ -111,7 +114,7 @@ module fluxo_dados (
   );
 
   // timer da piscagem
-  contador_m #(500, 9) timer_piscagem (             
+  contador_m #(20_000_000, 25) timer_piscagem (             
     .clock   ( clock ),
     .zera_as ( 1'b0 ),
     .zera_s  ( zeraT ),
@@ -132,9 +135,15 @@ module fluxo_dados (
     .meio    (  )
   );
 
+  debounce debouncer (
+    .clk  ( clock ),
+    .btn  ( botoes ),
+    .btn_clean ( balling )
+  );
+
 
   // entrada edger
-  assign s_sinal = |botoes;
+  assign s_sinal = |balling;
 
   // saida da coluna
   assign colunas = passou_nivel ? s_col_reg : s_col_mat;

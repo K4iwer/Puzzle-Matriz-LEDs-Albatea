@@ -66,7 +66,13 @@ module unidade_controle (
         case (Eatual)
             inicial:            Eprox = iniciar ? preparacao : inicial;
             preparacao:         Eprox = inic_nivel;
-            inic_nivel:         Eprox = jogando;
+            inic_nivel:         
+				begin 
+                if (fimT)
+                    Eprox = jogando;
+                else
+                    Eprox = inic_nivel;
+            end
             jogando:            Eprox = nivel_concluido ? inic_apagado : jogando;
             inic_apagado:       Eprox = mostra_apagado;
             mostra_apagado:     Eprox = fimT ? inic_aceso : mostra_apagado;
@@ -124,6 +130,7 @@ module unidade_controle (
 
             inic_nivel: begin
                 zeraM = 1'b1;
+					 contaT = 1'b1;
             end
 
             inic_apagado: begin
@@ -133,6 +140,7 @@ module unidade_controle (
             end
 
             mostra_apagado: begin
+					 zeraM        = 1'b1;
                 contaT = 1'b1;
                 passou_nivel = 1'b0;
             end
@@ -146,19 +154,24 @@ module unidade_controle (
             mostra_aceso: begin
                 contaT       = 1'b1;
                 passou_nivel = 1'b1;
+					 zeraM = 1'b1;
             end
 
             proxima_piscagem: begin
                 contaP = 1'b1;
+					 zeraM = 1'b1;
             end
 
             fim_animacao: begin
                 zeraP = 1'b1;
+					 zeraM = 1'b1;
+					 zeraT = 1'b1;
             end
 
             proximo_nivel: begin
                 contaN       = 1'b1;
                 passou_nivel = 1'b0;
+					 zeraM = 1'b1;
             end
 
             est_ganhou: begin

@@ -15,17 +15,17 @@ module reg_8x8 (clock, reset, indice, vitoria, coluna_sel);
     output reg [7:0] coluna_sel;
 
     // Registrador para guardar desenho
-    reg [7:0] desenho_vitoria [0:7]; // 8 linhas de 8 bits (desenho fixo)
+    reg [7:0] desenho_vitoria [7:0]; // 8 linhas de 8 bits (desenho fixo)
 
     always @(posedge reset) begin
-        desenho_vitoria[0] <= 8'b00011000;
-        desenho_vitoria[1] <= 8'b00011000;
-        desenho_vitoria[2] <= 8'b00100100;
-        desenho_vitoria[3] <= 8'b00100100;
-        desenho_vitoria[4] <= 8'b01000010;
-        desenho_vitoria[5] <= 8'b01000010;
-        desenho_vitoria[6] <= 8'b10000001;
-        desenho_vitoria[7] <= 8'b10000001;
+        desenho_vitoria[0] <= 8'b11111111;
+        desenho_vitoria[1] <= 8'b00000000;
+        desenho_vitoria[2] <= 8'b00000000;
+        desenho_vitoria[3] <= 8'b00000000;
+        desenho_vitoria[4] <= 8'b00000000;
+        desenho_vitoria[5] <= 8'b00000000;
+        desenho_vitoria[6] <= 8'b00000000;
+        desenho_vitoria[7] <= 8'b00000000;
     end
 
     // Seleciona qual padrão será mostrado
