@@ -67,7 +67,7 @@ module AlbaTEA (
         .contaP                       ( s_contaP ),
         .zeraP                        ( s_zeraP ),   
         .zeraM                        ( s_zeraM ),
-		  .rst_niv                      ( rst_niv ),
+	    .rst_niv                      ( rst_niv ),
         .ganhou                       ( s_ganhou ),
         .passou_nivel                 ( s_passou_nivel ),
         .botoes                       ( botoes ),
