@@ -174,6 +174,8 @@ module matriz_leds (
                 estado_leds[4][5] <= ~estado_leds[4][5];
                 estado_leds[5][3] <= ~estado_leds[5][3];
                 estado_leds[6][3] <= ~estado_leds[6][3];
+                estado_leds[7][3] <= ~estado_leds[7][3];  
+                estado_leds[7][5] <= ~estado_leds[7][5];  
             end
         end
     end
