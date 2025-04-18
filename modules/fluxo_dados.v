@@ -1,9 +1,6 @@
 /*
  * ------------------------------------------------------------------
- *  Arquivo   : fluxo_dados.v
- *  Projeto   : Projeto de jogo com matriz de leds
- * ------------------------------------------------------------------
- *  Descricao : Fluxo de dados do projeto
+ *  Fluxo de dados do Albatea
  * ------------------------------------------------------------------
  */
 

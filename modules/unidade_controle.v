@@ -1,18 +1,7 @@
 //------------------------------------------------------------------
-// Arquivo   : exp3_unidade_controle_desafio.v
-// Projeto   : Experiencia 3 - Projeto de uma Unidade de Controle
+// Unidade de controle do Albatea
 //------------------------------------------------------------------
-// Descricao : Unidade de controle
-//
-// usar este codigo como template (modelo) para codificar 
-// máquinas de estado de unidades de controle            
-//------------------------------------------------------------------
-// Revisoes  :
-//     Data        Versao  Autor             Descricao
-//     14/01/2024  1.0     Edson Midorikawa  versao inicial
-//     12/01/2025  1.1     Edson Midorikawa  revisao
-//------------------------------------------------------------------
-//
+
 module unidade_controle (
     input clock,
     input reset,

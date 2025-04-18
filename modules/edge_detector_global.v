@@ -1,3 +1,8 @@
+// -----------------------------
+// Módulo de edge detector 
+// para todos os botões
+// ----------------------------- 
+
 module edge_detector_global (
     input  clock,
     input  reset,

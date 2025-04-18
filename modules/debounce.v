@@ -1,3 +1,8 @@
+// ------------------------------------
+// Módulo para tratar problemas
+// de bouncing dos botões
+// ------------------------------------
+
 module debounce (
     input wire clk,       // Clock do sistema
     input wire [7:0] btn,       // Entrada do botão
