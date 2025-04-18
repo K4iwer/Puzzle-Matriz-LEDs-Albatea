@@ -5,7 +5,7 @@ Albatea é um jogo desenvolvido na matéria de laboratório digital, que visa aj
 
 Para completar a gameficação do projeto, existe um sistema de nível, em que inicialmente o jogador precisa acender apenas uma linha da matriz, e conforme os niveis vão sendo completados o número de linhas que precisam ser acesos são incrementados, gerando um sistema de progressão da dificuldade do jogo.
 
-![leds_animados](https://github.com/user-attachments/assets/79f8fa00-27c0-4121-9f10-61c582b330d0)
+<img src="Documentos/Imagens/leds_animados.gif" alt="Sistema de níveis" width="400px">
 
 Além disso, ao completar o nível há uma animação das leds piscando, o que indica ao jogador que ele completou o jogo. Por fim, ao finalizar o ultimo nível, o jogo pisca todas as leds e em seguida apresenta a imagem de um sorriso, como está na primeira imagem.
 
